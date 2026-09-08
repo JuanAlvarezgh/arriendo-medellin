@@ -1,0 +1,25 @@
+dominio: doomos.com.co
+portal: doomos
+categoria: html_servidor
+descripcion: >
+  Declara marcado schema.org completo, con RealEstateListing y coordenadas, asi
+  que lo resuelve la capa a sin renderizar. No publica estrato. Las URLs no
+  llevan identificador numerico: el identificador es el propio slug.
+
+  Es el portal mas sucio de los cuatro: mezcla inmueble comercial con
+  residencial, publica avisos de "venta o alquiler" donde el precio que trae es
+  el de venta, e incluye predios sobre la autopista Medellin-Bogota, que esta
+  en Cundinamarca y no en la ciudad. De ahi que el filtro sea tan explicito.
+
+limite_peticiones: 1.0
+concurrencia: 4
+
+sitemaps:
+  filtro_url: '/propiedad/.*(arriendo|alquiler).*medellin'
+  excluir_url: >-
+    por-dia|por-noche|
+    bodega|oficina|local-|lote|parqueadero|consultorio|edificio|finca|
+    venta-y-arriendo|venta-o-alquiler|arriendo-y-venta|
+    autopista-medellin
+
+patron_aviso: '/propiedad/'

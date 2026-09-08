@@ -1,0 +1,42 @@
+version: 2
+
+models:
+  - name: stg_avisos_limpios
+    description: >
+      Avisos de arriendo tipados y acotados a rangos plausibles para Medellin.
+      Descarta precios, areas y coordenadas fuera de rango.
+    columns:
+      - name: url
+        description: Identificador natural del aviso.
+        tests:
+          - not_null
+      - name: precio
+        description: Canon mensual pedido, en pesos.
+        tests:
+          - not_null
+      - name: area
+        description: Area privada, con la construida como respaldo.
+        tests:
+          - not_null
+      - name: precio_m2
+        description: Precio pedido por metro cuadrado.
+        tests:
+          - not_null
+      - name: estrato
+        tests:
+          - accepted_values:
+              values: [1, 2, 3, 4, 5, 6]
+              quote: false
+              config:
+                where: "estrato is not null"
+      - name: operacion
+        tests:
+          - accepted_values:
+              values: ['arriendo']
+      - name: antiguedad_ordinal
+        tests:
+          - accepted_values:
+              values: [0, 1, 2, 3, 4]
+              quote: false
+              config:
+                where: "antiguedad_ordinal is not null"

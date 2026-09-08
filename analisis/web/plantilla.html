@@ -1,0 +1,456 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arriendos en Medellín</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+__ESTILO_LEAFLET__
+</style>
+
+<style>
+/* ─────────────────────────────────────────────────────────────
+   Modern Organic Glass
+   Superficie cálida y orgánica, paneles de cristal esmerilado.
+   El color del dato es la paleta validada del proyecto: el estilo
+   viste el continente, nunca el contenido.
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  color-scheme: light;
+
+  --arena-0:   #fbf8f3;
+  --arena-1:   #f4efe6;
+  --arena-2:   #eae2d5;
+  --arena-3:   #ddd2c0;
+
+  --tinta:     #262320;
+  --tinta-2:   #5f584e;
+  --tinta-3:   #928a7d;
+
+  --terracota: #b0603a;
+  --musgo:     #6c7f5f;
+  --arcilla:   #c98c5e;
+
+  --vidrio:        rgba(255, 255, 255, 0.52);
+  --vidrio-fuerte: rgba(255, 255, 255, 0.72);
+  --vidrio-borde:  rgba(255, 255, 255, 0.80);
+  --vidrio-sombra: 0 10px 40px rgba(94, 82, 66, 0.10), 0 2px 8px rgba(94, 82, 66, 0.05);
+
+  --mancha-1: #cbd8c3;
+  --mancha-2: #f0d9c2;
+  --mancha-3: #d9cfe2;
+
+  --serie-1: #2a78d6;
+  --serie-2: #eb6834;
+  --polo-alto: #2a78d6;
+  --polo-bajo: #d03b3b;
+  --sin-datos: #c3b9a8;
+  /* Filo de cada hexagono sobre el mapa base: casi blanco en claro, casi negro
+     en oscuro. Tiene que separar celda de celda sin llegar a tapar la calle. */
+  --trazo-celda: rgba(255, 255, 255, 0.75);
+
+  --radio:    22px;
+  --radio-sm: 14px;
+  --suave:    cubic-bezier(.22,.61,.36,1);
+}
+
+:root:not([data-tema="claro"]) {
+  @media (prefers-color-scheme: dark) {
+    color-scheme: dark;
+    --arena-0: #131210;
+    --arena-1: #1b1917;
+    --arena-2: #23201c;
+    --arena-3: #2f2b25;
+    --tinta:   #f2ede4;
+    --tinta-2: #b8b0a3;
+    --tinta-3: #857d70;
+    --terracota: #d98a5f;
+    --musgo:   #9bb18a;
+    --vidrio:        rgba(46, 43, 38, 0.55);
+    --vidrio-fuerte: rgba(52, 48, 42, 0.75);
+    --vidrio-borde:  rgba(255, 255, 255, 0.10);
+    --vidrio-sombra: 0 10px 40px rgba(0, 0, 0, 0.32);
+    --mancha-1: #35402f;
+    --mancha-2: #47372a;
+    --mancha-3: #363048;
+    --serie-1: #3987e5;
+    --serie-2: #d95926;
+    --polo-alto: #3987e5;
+    --polo-bajo: #e66767;
+    --sin-datos: #5b5346;
+    --trazo-celda: rgba(0, 0, 0, 0.55);
+  }
+}
+
+:root[data-tema="oscuro"] {
+  color-scheme: dark;
+  --arena-0: #131210;
+  --arena-1: #1b1917;
+  --arena-2: #23201c;
+  --arena-3: #2f2b25;
+  --tinta:   #f2ede4;
+  --tinta-2: #b8b0a3;
+  --tinta-3: #857d70;
+  --terracota: #d98a5f;
+  --musgo:   #9bb18a;
+  --vidrio:        rgba(46, 43, 38, 0.55);
+  --vidrio-fuerte: rgba(52, 48, 42, 0.75);
+  --vidrio-borde:  rgba(255, 255, 255, 0.10);
+  --vidrio-sombra: 0 10px 40px rgba(0, 0, 0, 0.32);
+  --mancha-1: #35402f;
+  --mancha-2: #47372a;
+  --mancha-3: #363048;
+  --serie-1: #3987e5;
+  --serie-2: #d95926;
+  --polo-alto: #3987e5;
+  --polo-bajo: #e66767;
+  --sin-datos: #5b5346;
+  --trazo-celda: rgba(0, 0, 0, 0.55);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--arena-1);
+  color: var(--tinta);
+  font: 400 16px/1.65 Inter, -apple-system, "Segoe UI", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ── Fondo orgánico ───────────────────────────────────────── */
+
+.fondo { position: fixed; inset: 0; z-index: -1; overflow: hidden; }
+.mancha {
+  position: absolute;
+  border-radius: 46% 54% 62% 38% / 52% 44% 56% 48%;
+  filter: blur(70px);
+  opacity: .55;
+  animation: deriva 34s var(--suave) infinite alternate;
+}
+.mancha.a { width: 46vw; height: 46vw; left: -10vw; top: -8vw;  background: var(--mancha-1); }
+.mancha.b { width: 40vw; height: 40vw; right: -8vw; top: 22vh;  background: var(--mancha-2); animation-delay: -12s; }
+.mancha.c { width: 36vw; height: 36vw; left: 24vw;  bottom: -12vw; background: var(--mancha-3); animation-delay: -22s; }
+
+@keyframes deriva {
+  from { transform: translate3d(0,0,0) scale(1)    rotate(0deg); }
+  to   { transform: translate3d(3vw,-3vh,0) scale(1.12) rotate(14deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mancha { animation: none; }
+}
+
+/* ── Cristal ──────────────────────────────────────────────── */
+
+.vidrio {
+  background: var(--vidrio);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  backdrop-filter: blur(22px) saturate(180%);
+  border: 1px solid var(--vidrio-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--vidrio-sombra);
+}
+
+/* ── Estructura ───────────────────────────────────────────── */
+
+.envoltura { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+
+header.hero { padding: 88px 0 42px; }
+.hero h1 {
+  font: 600 clamp(38px, 5.4vw, 66px)/1.06 Fraunces, Georgia, serif;
+  font-optical-sizing: auto;
+  letter-spacing: -0.022em;
+  margin: 0 0 18px;
+  max-width: 17ch;
+}
+.hero .entrada {
+  font-size: 18px; line-height: 1.6; color: var(--tinta-2);
+  max-width: 62ch; margin: 0 0 34px;
+}
+.etiqueta {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 12.5px; font-weight: 500; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--tinta-2);
+  padding: 7px 15px; border-radius: 999px; margin-bottom: 24px;
+}
+.punto { width: 7px; height: 7px; border-radius: 50%; background: var(--terracota); }
+
+section { margin: 0 0 30px; }
+h2 {
+  font: 600 clamp(25px, 3vw, 35px)/1.18 Fraunces, Georgia, serif;
+  letter-spacing: -0.018em; margin: 0 0 10px;
+}
+h3 { font: 600 18px/1.35 Inter, sans-serif; margin: 0 0 8px; letter-spacing: -0.01em; }
+p  { margin: 0 0 14px; }
+.apunte { color: var(--tinta-2); font-size: 14.5px; }
+.tenue  { color: var(--tinta-3); font-size: 13px; }
+
+/* ── Indicadores ──────────────────────────────────────────── */
+
+.rejilla-ind {
+  display: grid; gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(184px, 1fr));
+}
+.ind { padding: 20px 22px; }
+.ind .cifra {
+  font: 600 clamp(26px, 3.1vw, 36px)/1 Fraunces, Georgia, serif;
+  letter-spacing: -0.02em; display: block; margin-bottom: 5px;
+}
+.ind .rotulo { font-size: 12.5px; color: var(--tinta-2); line-height: 1.4; }
+.ind .nota   { font-size: 11.5px; color: var(--tinta-3); margin-top: 6px; }
+
+/* ── Mapa ─────────────────────────────────────────────────── */
+
+.mapa-marco { padding: 24px; }
+.mapa-cabecera {
+  display: flex; flex-wrap: wrap; gap: 16px;
+  align-items: flex-end; justify-content: space-between; margin-bottom: 18px;
+}
+.capas { display: flex; flex-wrap: wrap; gap: 7px; }
+.capa {
+  font: 500 13.5px Inter, sans-serif; color: var(--tinta-2);
+  background: transparent; border: 1px solid transparent;
+  padding: 8px 15px; border-radius: 999px; cursor: pointer;
+  transition: all .22s var(--suave);
+}
+.capa:hover { color: var(--tinta); background: var(--vidrio-fuerte); }
+.capa[aria-pressed="true"] {
+  color: var(--tinta); background: var(--vidrio-fuerte);
+  border-color: var(--vidrio-borde); font-weight: 600;
+}
+
+.mapa-cuerpo { display: grid; grid-template-columns: 1fr 290px; gap: 20px; align-items: start; }
+@media (max-width: 900px) { .mapa-cuerpo { grid-template-columns: 1fr; } }
+
+.lienzo {
+  position: relative; border-radius: var(--radio-sm); overflow: hidden;
+  background: var(--arena-1);
+  box-shadow: inset 0 0 0 1px var(--arena-3);
+}
+/* Leaflet mide el contenedor, así que necesita una altura declarada. El valle
+   es más alto que ancho, de modo que se le da altura generosa y se acota con
+   la altura de la ventana para que quepa junto a la ficha lateral. */
+#mapa { height: clamp(430px, 68vh, 780px); width: 100%; background: var(--arena-1); }
+#mapa path { transition: fill-opacity .3s var(--suave); cursor: pointer; }
+
+/* El mapa estándar de OpenStreetMap es muy saturado: los verdes de los parques
+   y los rojos de las vías compiten con la escala de color del dato, que es lo
+   que hay que leer. Se le baja la saturación lo justo para que ceda el
+   protagonismo sin que los rótulos pierdan nitidez, que es la razón de tener
+   mapa base. El lienzo oscuro de Esri ya viene apagado y no necesita filtro. */
+#mapa .leaflet-tile-pane { filter: saturate(.5) brightness(1.04); }
+:root[data-tema="oscuro"] #mapa .leaflet-tile-pane { filter: none; }
+:root:not([data-tema="claro"]) {
+  @media (prefers-color-scheme: dark) {
+    #mapa .leaflet-tile-pane { filter: none; }
+  }
+}
+
+/* Los controles de Leaflet, vestidos de cristal como el resto de la página. */
+#mapa .leaflet-control-zoom a {
+  background: var(--vidrio-fuerte); color: var(--tinta);
+  border: none; border-bottom: 1px solid var(--arena-3);
+  backdrop-filter: blur(14px); font-weight: 500;
+}
+#mapa .leaflet-control-zoom a:hover { background: var(--arena-0); color: var(--terracota); }
+#mapa .leaflet-control-zoom { border: 1px solid var(--vidrio-borde); border-radius: 10px; overflow: hidden; box-shadow: var(--vidrio-sombra); }
+#mapa .leaflet-control-attribution {
+  background: var(--vidrio); color: var(--tinta-3);
+  backdrop-filter: blur(10px); font: 400 10.5px Inter, sans-serif;
+  padding: 2px 8px; border-radius: 8px 0 0 0;
+}
+#mapa .leaflet-control-attribution a { color: var(--tinta-2); }
+
+.bajo-mapa {
+  display: flex; flex-wrap: wrap; gap: 14px; align-items: center;
+  justify-content: space-between; margin-top: 10px;
+}
+.pista { margin: 0; font-size: 12px; color: var(--tinta-3); }
+.mando {
+  display: flex; align-items: center; gap: 9px;
+  font-size: 12px; color: var(--tinta-3); white-space: nowrap;
+}
+.mando input[type="range"] { width: 130px; accent-color: var(--terracota); cursor: pointer; }
+
+.chincheta {
+  margin-left: 8px; padding: 1px 7px; border-radius: 999px;
+  font: 500 10.5px Inter, sans-serif; letter-spacing: .04em;
+  color: var(--terracota); background: var(--arena-2); vertical-align: middle;
+}
+
+.lateral { display: flex; flex-direction: column; gap: 14px; }
+.detalle { padding: 18px 20px; min-height: 190px; }
+.detalle .titulo { font: 600 16px Inter, sans-serif; margin-bottom: 3px; }
+.detalle dl { margin: 12px 0 0; display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; font-size: 13.5px; }
+.detalle dt { color: var(--tinta-2); }
+.detalle dd { margin: 0; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+.detalle .vacio { color: var(--tinta-3); font-size: 13.5px; }
+
+.leyenda { padding: 16px 20px; }
+.leyenda .titulo { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); margin-bottom: 11px; }
+.leyenda ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.leyenda li { display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--tinta-2); }
+.muestra { width: 18px; height: 12px; border-radius: 3px; flex: none; }
+.muestra.circ { width: 11px; height: 11px; border-radius: 50%; }
+
+/* ── Hallazgo destacado ───────────────────────────────────── */
+
+.hallazgo { padding: 30px 34px; border-left: 3px solid var(--terracota); }
+.hallazgo .grande {
+  font: 600 clamp(30px, 4vw, 46px)/1.08 Fraunces, Georgia, serif;
+  letter-spacing: -0.02em; margin: 0 0 12px; color: var(--terracota);
+}
+
+/* ── Bloques de dos columnas ──────────────────────────────── */
+
+.dos { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.tarjeta { padding: 24px 26px; }
+.tarjeta img { width: 100%; height: auto; border-radius: var(--radio-sm); display: block; margin-top: 12px; }
+
+/* ── Tabla ────────────────────────────────────────────────── */
+
+.tabla-envoltura { overflow-x: auto; border-radius: var(--radio-sm); }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th, td { padding: 9px 14px; text-align: left; }
+th { font-weight: 600; font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--tinta-2); }
+td { border-top: 1px solid var(--arena-3); font-variant-numeric: tabular-nums; }
+td.num, th.num { text-align: right; }
+tbody tr:hover { background: var(--vidrio-fuerte); }
+
+/* ── Barra flotante ───────────────────────────────────────── */
+
+.barra {
+  position: fixed; top: 18px; right: 18px; z-index: 40;
+  display: flex; gap: 6px; padding: 6px; border-radius: 999px;
+}
+.barra button {
+  border: none; background: transparent; cursor: pointer; color: var(--tinta-2);
+  width: 34px; height: 34px; border-radius: 50%; font-size: 15px;
+  display: grid; place-items: center; transition: all .2s var(--suave);
+}
+.barra button:hover { background: var(--vidrio-fuerte); color: var(--tinta); }
+
+footer { padding: 44px 0 66px; color: var(--tinta-3); font-size: 13px; }
+footer strong { color: var(--tinta-2); }
+
+.aparece { opacity: 0; transform: translateY(16px); transition: opacity .7s var(--suave), transform .7s var(--suave); }
+.aparece.visible { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .aparece { opacity: 1; transform: none; } }
+</style>
+
+<div class="fondo" aria-hidden="true">
+  <div class="mancha a"></div><div class="mancha b"></div><div class="mancha c"></div>
+</div>
+
+<div class="barra vidrio">
+  <button id="tema" title="Cambiar entre claro y oscuro" aria-label="Cambiar tema">◐</button>
+</div>
+
+<div class="envoltura">
+
+  <header class="hero">
+    <span class="etiqueta vidrio"><span class="punto"></span>Análisis de datos · Medellín</span>
+    <h1>Por qué subió el precio de los arriendos</h1>
+    <p class="entrada">
+      17.345 avisos recogidos de cuatro portales inmobiliarios, cruzados con el
+      censo del DANE y con el índice de precios al consumidor. Lo que sigue
+      explica dónde está caro, cuánto de eso es la ubicación en sí misma, y una
+      cosa más incómoda: <strong>dónde el mercado formal simplemente no llega</strong>.
+    </p>
+    <div class="rejilla-ind" id="indicadores"></div>
+  </header>
+
+  <section class="aparece">
+    <div class="mapa-marco vidrio">
+      <div class="mapa-cabecera">
+        <div>
+          <h2 id="mapa-titulo">El precio del metro cuadrado</h2>
+          <p class="apunte" id="mapa-sub" style="margin:0">
+            Mediana del precio pedido en celdas hexagonales de 174 m de arista
+          </p>
+        </div>
+        <div class="capas" role="group" aria-label="Capas del mapa">
+          <button class="capa" data-capa="precio"   aria-pressed="true">Precio</button>
+          <button class="capa" data-capa="cobertura" aria-pressed="false">Cobertura</button>
+          <button class="capa" data-capa="sobreprecio" aria-pressed="false">Sobreprecio</button>
+          <button class="capa" data-capa="conglomerado" aria-pressed="false">Conglomerados</button>
+          <button class="capa" data-capa="viviendas" aria-pressed="false">Viviendas</button>
+        </div>
+      </div>
+
+      <div class="mapa-cuerpo">
+        <div>
+          <div class="lienzo">
+            <div id="mapa" role="application" aria-label="Mapa de Medellín por celdas hexagonales sobre el callejero"></div>
+          </div>
+          <div class="bajo-mapa">
+            <p class="pista" id="pista-mapa">
+              Clic en una celda para fijar sus cifras. Clic en el mapa para acercar con la rueda.
+            </p>
+            <label class="mando">
+              Opacidad
+              <input type="range" id="opacidad" min="15" max="95" value="68"
+                     aria-label="Opacidad de los hexágonos sobre el mapa">
+            </label>
+          </div>
+        </div>
+        <aside class="lateral">
+          <div class="detalle vidrio" id="detalle"></div>
+          <div class="leyenda vidrio" id="leyenda"></div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="aparece">
+    <div class="hallazgo vidrio">
+      <p class="grande" id="hallazgo-cifra">28,6 %</p>
+      <h3>del parque de vivienda de Medellín no tiene un solo aviso</h3>
+      <p class="apunte" style="max-width:70ch">
+        De las <strong id="h-total">1.521</strong> celdas que cubren la ciudad,
+        <strong id="h-sin">527</strong> no
+        registran ni un arriendo publicado. En ellas viven
+        <strong id="h-viv">251.782</strong> hogares censados. No es que falten datos
+        por recoger: es que <strong>el arriendo en las comunas populares no se
+        anuncia en portales inmobiliarios</strong>, se mueve por aviso en la ventana
+        y voz a voz.
+      </p>
+      <p class="apunte" style="max-width:70ch;margin:0">
+        La consecuencia para leer este trabajo es directa. Medido contra el censo,
+        el estrato 6 aparece <strong>trece veces más representado</strong> que el
+        estrato 1: 186,9 avisos por cada mil viviendas frente a 14,1. Todo lo que
+        sigue describe el mercado <em>formal e intermediado</em>, que es una parte
+        del mercado de arriendo, no su totalidad.
+      </p>
+    </div>
+  </section>
+
+  <section class="aparece" id="seccion-alza"></section>
+  <section class="aparece" id="seccion-modelo"></section>
+  <section class="aparece" id="seccion-ubicacion"></section>
+  <section class="aparece" id="seccion-turismo"></section>
+
+  <footer>
+    <p><strong>Lo que este trabajo no puede afirmar.</strong> Son precios pedidos,
+    no pactados. Es un corte transversal enriquecido con una serie oficial, no un
+    panel propio. Los avisos no son una muestra aleatoria del parque de vivienda.
+    Las relaciones halladas son asociaciones, no efectos causales.</p>
+    <p>Fuentes: portales inmobiliarios, Marco Geoestadístico Nacional y Índice de
+    Precios al Consumidor del DANE, y Registro Nacional de Turismo.</p>
+  </footer>
+</div>
+
+<script>
+__LEAFLET__
+</script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script>
+const DATOS = __DATOS__;
+</script>
+<script>
+__GUION__
+</script>

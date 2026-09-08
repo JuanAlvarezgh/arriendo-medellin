@@ -1,0 +1,93 @@
+# Tema de los dos paneles de Streamlit: el tablero del analisis y el monitor
+# del bot. Es el mismo lenguaje visual de la pagina web del informe, "Modern
+# Organic Glass": superficie calida de arena, tinta cafe en vez de negro,
+# terracota como acento y Fraunces para los titulares.
+#
+# Se declaran las dos variantes por separado, [theme.light] y [theme.dark], de
+# modo que el interruptor de tema de Streamlit siga funcionando y las dos
+# versiones sean deliberadas. Antes, con una sola paleta, elegir el modo oscuro
+# dejaba texto cafe sobre fondo negro.
+#
+# Lo que no cabe aqui -el cristal esmerilado, las manchas organicas del fondo,
+# las pestanas en pastilla- va en analisis/estilo.py, que inyecta el CSS.
+
+[theme]
+base = "light"
+font = "Inter, -apple-system, 'Segoe UI', system-ui, sans-serif"
+headingFont = "Fraunces, Georgia, serif"
+codeFont = "'JetBrains Mono', 'Cascadia Code', Consolas, monospace"
+
+baseFontSize = 16
+baseRadius = "1rem"
+buttonRadius = "full"
+showWidgetBorder = true
+showSidebarBorder = false
+linkUnderline = false
+
+# Los colores de las graficas nativas de Streamlit salen de la misma paleta que
+# las figuras del informe, para que un st.bar_chart no desentone con un PNG.
+chartCategoricalColors = ["#2a78d6", "#eb6834", "#6c7f5f", "#b0603a", "#c98c5e", "#8a7fa8"]
+chartSequentialColors = [
+  "#e8f0fc", "#cde2fb", "#9ec5f4", "#6da7ec",
+  "#3987e5", "#256abf", "#184f95", "#0d366b", "#07234a",
+]
+
+[theme.light]
+primaryColor = "#b0603a"              # terracota
+backgroundColor = "#f4efe6"           # arena-1
+secondaryBackgroundColor = "#fbf8f3"  # arena-0
+textColor = "#262320"                 # tinta
+borderColor = "#ddd2c0"               # arena-3
+dataframeBorderColor = "#ddd2c0"
+dataframeHeaderBackgroundColor = "#eae2d5"
+codeBackgroundColor = "#eae2d5"
+linkColor = "#a05330"
+
+greenColor = "#6c7f5f"
+greenBackgroundColor = "#e6ece1"
+orangeColor = "#c07a33"
+orangeBackgroundColor = "#f6ead6"
+redColor = "#c0392b"
+redBackgroundColor = "#f7e3e0"
+blueColor = "#2a78d6"
+blueBackgroundColor = "#e3edfb"
+grayColor = "#928a7d"
+grayBackgroundColor = "#eae2d5"
+
+[theme.light.sidebar]
+backgroundColor = "#efe8dc"
+secondaryBackgroundColor = "#fbf8f3"
+borderColor = "#ddd2c0"
+
+[theme.dark]
+primaryColor = "#d98a5f"
+backgroundColor = "#131210"           # arena-0 oscuro
+secondaryBackgroundColor = "#1f1c19"
+textColor = "#f2ede4"
+borderColor = "#332e27"
+dataframeBorderColor = "#332e27"
+dataframeHeaderBackgroundColor = "#23201c"
+codeBackgroundColor = "#23201c"
+linkColor = "#e0a17f"
+
+greenColor = "#9bb18a"
+greenBackgroundColor = "#242c1f"
+orangeColor = "#d99a55"
+orangeBackgroundColor = "#332616"
+redColor = "#e66767"
+redBackgroundColor = "#331d1d"
+blueColor = "#3987e5"
+blueBackgroundColor = "#16233a"
+grayColor = "#857d70"
+grayBackgroundColor = "#23201c"
+
+[theme.dark.sidebar]
+backgroundColor = "#191714"
+secondaryBackgroundColor = "#23201c"
+borderColor = "#332e27"
+
+[server]
+headless = true
+
+[browser]
+gatherUsageStats = false

@@ -1,0 +1,15 @@
+dominio: metrocuadrado.com
+portal: metrocuadrado
+categoria: html_servidor
+descripcion: >
+  El contenido esta en el HTML servido, pero los enlaces de detalle los arma
+  JavaScript. Se resuelve por la capa d, con la capa a como apoyo cuando la
+  pagina declara marcado de schema.org.
+
+limite_peticiones: 1.2
+concurrencia: 4
+
+sitemaps:
+  filtro_url: "(arriendo|alquiler).*(medellin)"
+
+patron_aviso: '/inmueble/|-(?:MC)?\d{5,}'

@@ -1,0 +1,28 @@
+{
+ "iniciado_en": 1788574475.6202521,
+ "ultimo_aviso_en": 1788574501.7043984,
+ "actualizado_en": 1788574501.7113998,
+ "pid": 13996,
+ "terminado": true,
+ "cache_aciertos": 40,
+ "cache_fallos": 22,
+ "duplicados": 0,
+ "costo_modelo_usd": 0.0,
+ "portales": {
+  "doomos": {
+   "descubiertos": 40,
+   "descargados": 40,
+   "extraidos": 38,
+   "fallidos": 2,
+   "omitidos": 0,
+   "por_capa": {
+    "a": 34,
+    "d": 4
+   },
+   "motivos_fallo": {
+    "sin area": 2
+   },
+   "ultima_capa": "a"
+  }
+ }
+}

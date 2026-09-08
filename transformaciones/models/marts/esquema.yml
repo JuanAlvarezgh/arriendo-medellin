@@ -1,0 +1,38 @@
+version: 2
+
+models:
+  - name: hechos_arriendo
+    description: >
+      Tabla de hechos del analisis. Un aviso canonico por fila, ya deduplicado
+      entre portales, con los atributos listos para el modelo hedonico.
+    columns:
+      - name: clave_aviso
+        description: Clave natural, portal mas identificador de origen.
+        tests:
+          - unique
+          - not_null
+      - name: precio
+        tests:
+          - not_null
+      - name: area
+        tests:
+          - not_null
+      - name: log_precio
+        tests:
+          - not_null
+      - name: barrio
+        description: Barrio derivado del slug de la URL del aviso.
+
+  - name: dim_barrio
+    description: Indicadores de mercado agregados por barrio, con minimo cinco avisos.
+    columns:
+      - name: barrio
+        tests:
+          - unique
+          - not_null
+      - name: avisos
+        tests:
+          - not_null
+      - name: precio_m2_mediano
+        tests:
+          - not_null

@@ -1,0 +1,16 @@
+dominio: coninsa.co
+portal: coninsa
+categoria: html_servidor
+descripcion: >
+  Inmobiliaria con inventario propio. Sirve el contenido en el HTML y declara
+  marcado de schema.org, pero como RealEstateAgent y Product, no como aviso,
+  de modo que quien lo resuelve es la capa d por proximidad etiqueta a valor.
+  El barrio viene en la ruta, antes del segmento del municipio.
+
+limite_peticiones: 1.0
+concurrencia: 4
+
+sitemaps:
+  filtro_url: '/inmuebles/[a-z-]+-en-arriendo/[a-z0-9-]+/medellin/\d+'
+
+patron_aviso: '/inmuebles/.+/medellin/\d+'

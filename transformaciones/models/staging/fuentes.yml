@@ -1,0 +1,22 @@
+version: 2
+
+sources:
+  - name: stg
+    schema: stg
+    description: Avisos normalizados que carga el bot rastreador.
+    tables:
+      - name: avisos
+        description: Un registro por aviso y portal, ya validado contra el esquema canonico.
+        columns:
+          - name: portal
+            tests: [not_null]
+          - name: id_fuente
+            tests: [not_null]
+          - name: url
+            tests: [not_null]
+
+  - name: raw
+    schema: raw
+    description: Respuesta cruda por aviso, inmutable, para poder reprocesar sin volver a raspar.
+    tables:
+      - name: avisos

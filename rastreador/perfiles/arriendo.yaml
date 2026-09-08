@@ -1,0 +1,17 @@
+dominio: arriendo.com
+portal: arriendo
+categoria: spa
+descripcion: >
+  Aplicacion de una sola pagina. El HTML servido solo dice "Cargando" y las
+  unicas coincidencias de metros cuadrados son coordenadas de iconos SVG, no
+  datos. Publica sitemaps utiles, asi que el descubrimiento va por ahi y solo
+  el renderizado necesita navegador.
+
+limite_peticiones: 0.5
+concurrencia: 2
+requiere_navegador: true
+
+sitemaps:
+  filtro_url: '/co/[a-z]+/medellin/[a-z0-9-]+/[A-Z]{2}-?\d+'
+
+patron_aviso: '/medellin/[a-z0-9-]+/[A-Z]{2}-?\d+'

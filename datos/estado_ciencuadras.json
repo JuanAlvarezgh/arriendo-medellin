@@ -1,0 +1,27 @@
+{
+ "iniciado_en": 1788574600.300651,
+ "ultimo_aviso_en": 1788574620.7547982,
+ "actualizado_en": 1788574620.9280562,
+ "pid": 22576,
+ "terminado": true,
+ "cache_aciertos": 20,
+ "cache_fallos": 0,
+ "duplicados": 0,
+ "costo_modelo_usd": 0.0,
+ "portales": {
+  "ciencuadras": {
+   "descubiertos": 20,
+   "descargados": 20,
+   "extraidos": 18,
+   "fallidos": 2,
+   "omitidos": 0,
+   "por_capa": {
+    "a": 18
+   },
+   "motivos_fallo": {
+    "sin precio": 2
+   },
+   "ultima_capa": "a"
+  }
+ }
+}

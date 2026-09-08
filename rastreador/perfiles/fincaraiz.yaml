@@ -1,0 +1,36 @@
+dominio: fincaraiz.com.co
+portal: fincaraiz
+categoria: estado_embebido
+descripcion: >
+  Publica el objeto completo del aviso en __NEXT_DATA__. La cascada lo resuelve
+  en la capa b sin mapeo explicito; el mapeo de abajo solo fija las rutas para
+  no depender de la busqueda automatica si el sitio cambia.
+
+limite_peticiones: 1.8
+concurrencia: 8
+
+sitemaps:
+  filtro_sitemap: 'cde-sitemap-listings-(apartamento|apartaestudio|casa)-en-alquiler-antioquia'
+  # Exige la forma exacta del aviso: barrio-medellin/<id>. Un filtro laxo como
+  # '-medellin/' tambien captura el directorio de la inmobiliaria
+  # 'Arrendamientos Medellin', que son paginas de categoria y no avisos.
+  filtro_url: '-medellin/\d{5,}$'
+  excluir_url: '/inmobiliarias/'
+
+mapeo:
+  precio: props.pageProps.data.price.amount
+  administracion: props.pageProps.data.commonExpenses.amount
+  area_privada: props.pageProps.data.m2apto
+  area_construida: props.pageProps.data.m2Built
+  alcobas: props.pageProps.data.bedrooms
+  banos: props.pageProps.data.bathrooms
+  parqueaderos: props.pageProps.data.garage
+  estrato: props.pageProps.data.stratum
+  piso: props.pageProps.data.floor
+  direccion: props.pageProps.data.address
+  latitud: props.pageProps.data.latitude
+  longitud: props.pageProps.data.longitude
+  titulo: props.pageProps.data.title
+  descripcion: props.pageProps.data.description
+  creado_en: props.pageProps.data.created_at
+  actualizado_en: props.pageProps.data.updated_at

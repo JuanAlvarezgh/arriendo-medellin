@@ -1,0 +1,27 @@
+{
+ "iniciado_en": 1788573506.802471,
+ "ultimo_aviso_en": 1788573545.696898,
+ "actualizado_en": 1788573545.7051806,
+ "pid": 21512,
+ "terminado": true,
+ "cache_aciertos": 8,
+ "cache_fallos": 38,
+ "duplicados": 0,
+ "costo_modelo_usd": 0.0,
+ "portales": {
+  "coninsa": {
+   "descubiertos": 40,
+   "descargados": 40,
+   "extraidos": 39,
+   "fallidos": 1,
+   "omitidos": 0,
+   "por_capa": {
+    "d": 39
+   },
+   "motivos_fallo": {
+    "sin area": 1
+   },
+   "ultima_capa": "d"
+  }
+ }
+}

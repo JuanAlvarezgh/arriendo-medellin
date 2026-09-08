@@ -1,0 +1,12 @@
+arriendos_medellin:
+  target: local
+  outputs:
+    local:
+      type: postgres
+      host: localhost
+      port: 5432
+      user: postgres
+      password: ""
+      dbname: arriendos
+      schema: public
+      threads: 4

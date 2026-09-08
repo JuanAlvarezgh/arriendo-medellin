@@ -1,0 +1,25 @@
+dominio: ciencuadras.com
+portal: ciencuadras
+categoria: spa
+descripcion: >
+  Aplicacion de una sola pagina: el HTML servido no trae precios ni areas.
+  Tras renderizar con navegador si aparecen, y la pagina declara ld+json, de
+  modo que la capa a resuelve el aviso. No expone un endpoint JSON de listados
+  que se pueda llamar directo, asi que la via es render mas cascada.
+
+# El sitio limita por IP: tras unas decenas de renderizados seguidos empieza a
+# servir una pagina recortada, sin avisos, a cualquier agente. No es deteccion
+# del User-Agent (se comprobo con tres distintos). Por eso el ritmo es lento y
+# la concurrencia baja: es un portal para raspar despacio, no en rafaga.
+limite_peticiones: 0.3
+concurrencia: 1
+requiere_navegador: true
+
+patron_aviso: '/inmueble/'
+
+descubrimiento_navegador:
+  paginas:
+    - 'https://www.ciencuadras.com/arriendo/medellin'
+    - 'https://www.ciencuadras.com/arriendo/medellin?page={n}'
+  hasta_pagina: 40
+  patron_enlace: '/inmueble/'
