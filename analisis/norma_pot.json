@@ -1,0 +1,64 @@
+{
+  "activa": "acuerdo_48_2014",
+  "revision": "Proyecto de Acuerdo 104 de 2026",
+  "aviso": "Norma vigente: Acuerdo 48 de 2014. En revisión: Proyecto de Acuerdo 104 de 2026, radicado en el Concejo el 19 de agosto de 2026, que cambia el 78 % del articulado. Lo que se ve aquí puede cambiar.",
+  "normas": {
+    "acuerdo_48_2014": {
+      "nombre": "Acuerdo 48 de 2014",
+      "tratamientos": {
+        "servicio": "ordenamiento_ter/VM_22_Tratamientos_Urbanos",
+        "capa": 0,
+        "campos": {
+          "codigo": "codigo_tramiento",
+          "tratamiento": "tratamiento",
+          "tipo": "tipo",
+          "categoria": "categoria_tratamiento",
+          "zona": "zona",
+          "clase_suelo": "clase_suelo",
+          "densidad": "densidadmax",
+          "ic": "indiceconstruccmax",
+          "altura": "alturanormativa",
+          "altura_variable": "alturavariable",
+          "altura_adicional": "alturaadicio",
+          "densidad_adicional": "densadici",
+          "densidad_total": "denstotal",
+          "ic_adicional": "icadici",
+          "ic_total": "ictotal",
+          "cesion_vivienda": "cesviv",
+          "porcentaje_minimo": "porcanmin",
+          "equipamiento_vivienda": "eqcntviv",
+          "derechos_vivienda": "vderviv",
+          "fecha_adopcion": "fecha_adopcion"
+        }
+      },
+      "usos": {
+        "servicio": "ordenamiento_ter/VM_23_Uso_General_Suelo_Urbano",
+        "capa": 2,
+        "campos": {"categoria": "cod_cat_uso", "uso": "subcategoria"}
+      }
+    },
+    "revision_2026": {
+      "nombre": "Proyecto de Acuerdo 104 de 2026 (revisión de mediano plazo)",
+      "nota": "Capas renombradas en la revisión. La de índices de construcción desaparece, así que los campos que no existan quedan vacíos.",
+      "tratamientos": {
+        "servicio": "ordenamiento_ter/26_TrtmUrbanisticoSuelUrbExpans_P",
+        "capa": 0,
+        "campos": {
+          "codigo": "codigo_tramiento",
+          "tratamiento": "tratamiento",
+          "tipo": "tipo",
+          "categoria": "categoria_tratamiento",
+          "zona": "zona",
+          "clase_suelo": "clase_suelo",
+          "densidad": "densidadmax",
+          "altura": "alturanormativa"
+        }
+      },
+      "usos": {
+        "servicio": "ordenamiento_ter/27_AreasActividadUrbana_P",
+        "capa": 0,
+        "campos": {"categoria": "cod_cat_uso", "uso": "subcategoria"}
+      }
+    }
+  }
+}
