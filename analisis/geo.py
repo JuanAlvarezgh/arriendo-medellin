@@ -25,7 +25,13 @@ CRS_COLOMBIA = "EPSG:9377"  # Origen Nacional, en metros
 COD_MEDELLIN = "05001"
 RESOLUCION_H3 = 9  # arista de unos 174 m
 
-RUTA_MANZANAS = Path("C:/Users/Juan/Desktop/UrbanAnalysis_salidas/manzanas_medidores.gpkg")
+# La carpeta del proyecto de medidores se movio dentro de "analisis de datos"; se
+# acepta tambien la ubicacion anterior para no romper copias viejas del repo.
+_CANDIDATAS_MANZANAS = (
+    Path("C:/Users/Juan/Desktop/analisis de datos/UrbanAnalysis_salidas/manzanas_medidores.gpkg"),
+    Path("C:/Users/Juan/Desktop/UrbanAnalysis_salidas/manzanas_medidores.gpkg"),
+)
+RUTA_MANZANAS = next((r for r in _CANDIDATAS_MANZANAS if r.exists()), _CANDIDATAS_MANZANAS[0])
 
 COLUMNAS_CENSO = [
     "COD_DANE_A",

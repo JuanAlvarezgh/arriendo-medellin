@@ -92,37 +92,19 @@ def _csv_a_lista(ruta: Path, columnas: list[str] | None = None,
 
 
 def construir() -> dict:
-    """Todo lo que la pagina necesita, en un solo objeto."""
-    salidas = Path("datos/salidas")
-    modelo = salidas / "resumen_modelo.json"
-    return {
-        "rejilla": compactar_rejilla(),
-        "resumen": resumen(),
-        # Cifras de portada y efectos del modelo. Van calculadas, no escritas a
-        # mano en el guion: al corregir el barrio, el modelo cambio y la portada
-        # habria seguido anunciando los numeros viejos sin que nada fallara.
-        "modelo": json.loads(modelo.read_text(encoding="utf-8")) if modelo.exists() else {},
-        "barrios": _csv_a_lista(
-            salidas / "sobreprecio_por_barrio.csv",
-            ["barrio", "avisos", "sobreprecio_pct", "precio_m2_mediano"],
-        ),
-        "ipc": _csv_a_lista(
-            salidas / "ipc_arriendo_dane.csv",
-            ["periodo", "indice_arriendo", "variacion_anual",
-             "alojamiento_medellin_anual", "alojamiento_nacional_anual"],
-        ),
-        "turismo": _csv_a_lista(salidas / "rnt_viviendas_turisticas.csv"),
-        "amoblados": _csv_a_lista(
-            salidas / "amoblado_vs_sobreprecio.csv",
-            ["barrio", "pct_amoblado", "sobreprecio_pct", "n_total"],
-        ),
-    }
+    """Todo lo que la pagina necesita, en un solo objeto.
+
+    La pagina principal es solo el mapa de puntos; las cifras del informe
+    (modelo, IPC, renta corta) quedaron en el PDF y ya no se empotran aqui.
+    """
+    from .puntos_web import construir as construir_puntos
+
+    return {"puntos": construir_puntos()}
 
 
 if __name__ == "__main__":
     datos = construir()
     bruto = json.dumps(datos, ensure_ascii=False, separators=(",", ":"))
-    print(f"celdas:    {len(datos['rejilla']['celdas']):,}".replace(",", "."))
-    print(f"barrios:   {len(datos['barrios'])}")
-    print(f"meses ipc: {len(datos['ipc'])}")
+    print(f"avisos:    {len(datos['puntos']['avisos']['lat']):,}".replace(",", "."))
+    print(f"manzanas:  {len(datos['puntos']['manzanas']['lat']):,}".replace(",", "."))
     print(f"tamano:    {len(bruto)/1024:.0f} KB")

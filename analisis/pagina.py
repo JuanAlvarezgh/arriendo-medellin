@@ -4,7 +4,7 @@ Los datos van embebidos en el propio archivo, no en un .json aparte, porque un
 HTML abierto con doble clic usa file:// y ahi el navegador bloquea `fetch` sobre
 archivos locales. Con todo dentro, la pagina se abre sin servidor.
 
-Por la misma razon se empotra Leaflet en vez de enlazarlo a un CDN: la pagina se
+Por la misma razon se empotra MapLibre en vez de enlazarlo a un CDN: la pagina se
 entrega como archivo y tiene que seguir funcionando dentro de un ano, cuando la
 version que enlazamos ya no este donde estaba. Lo unico que queda saliendo a la
 red son las teselas del mapa base, que por naturaleza no se pueden empotrar.
@@ -16,18 +16,21 @@ import json
 import urllib.request
 from pathlib import Path
 
+from .sitio import insertar
+
 RAIZ = Path(__file__).resolve().parent
 PLANTILLA = RAIZ / "web" / "plantilla.html"
 GUION = RAIZ / "web" / "guion.js"
+MAPA_SATELITE = RAIZ / "web" / "mapa_satelite.js"
 BIBLIOTECAS = RAIZ / "web" / "bibliotecas"
 SALIDA = Path("datos/salidas/web/arriendos_medellin.html")
 
 # Version fija. Una version flotante convierte una pagina que hoy funciona en
 # una que manana puede no hacerlo, sin que nadie haya tocado nada.
-LEAFLET = "1.9.4"
+MAPLIBRE = "4.7.1"
 FUENTES = {
-    "leaflet.css": f"https://unpkg.com/leaflet@{LEAFLET}/dist/leaflet.css",
-    "leaflet.js": f"https://unpkg.com/leaflet@{LEAFLET}/dist/leaflet.js",
+    "maplibre-gl.css": f"https://unpkg.com/maplibre-gl@{MAPLIBRE}/dist/maplibre-gl.css",
+    "maplibre-gl.js": f"https://unpkg.com/maplibre-gl@{MAPLIBRE}/dist/maplibre-gl.js",
 }
 
 
@@ -49,18 +52,6 @@ def biblioteca(nombre: str) -> str:
     return contenido
 
 
-def _estilo_leaflet() -> str:
-    """La hoja de Leaflet, sin las rutas a imagenes que no usamos.
-
-    Leaflet pide `images/marker-icon.png` y `images/layers.png` para marcadores y
-    para el selector de capas. Este mapa no lleva ninguno de los dos, y esas
-    rutas relativas, en un archivo abierto con file://, se resolverian contra la
-    carpeta del usuario y ensuciarian la consola con errores 404.
-    """
-    css = biblioteca("leaflet.css")
-    return css.replace("url(images/", "url(#sin-imagen-")
-
-
 def construir(salida: Path = SALIDA) -> Path:
     from .carga_web import construir as construir_datos
 
@@ -68,18 +59,20 @@ def construir(salida: Path = SALIDA) -> Path:
     guion = GUION.read_text(encoding="utf-8")
     datos = construir_datos()
 
-    # separators sin espacios: ahorra decenas de kilobytes en 1.551 celdas
+    # separators sin espacios: ahorra cientos de kilobytes en treinta mil puntos
     serializado = json.dumps(datos, ensure_ascii=False, separators=(",", ":"))
 
     # </script> dentro de una cadena JSON cerraria la etiqueta antes de tiempo
     serializado = serializado.replace("</", "<\\/")
 
     html = (
-        plantilla.replace("__ESTILO_LEAFLET__", _estilo_leaflet())
-        .replace("__LEAFLET__", biblioteca("leaflet.js"))
+        plantilla.replace("__ESTILO_MAPLIBRE__", biblioteca("maplibre-gl.css"))
+        .replace("__MAPLIBRE__", biblioteca("maplibre-gl.js"))
+        .replace("__MAPA_SATELITE__", MAPA_SATELITE.read_text(encoding="utf-8"))
         .replace("__DATOS__", serializado)
         .replace("__GUION__", guion)
     )
+    html = insertar(html, "mapa")
 
     salida.parent.mkdir(parents=True, exist_ok=True)
     salida.write_text(html, encoding="utf-8")

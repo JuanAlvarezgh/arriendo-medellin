@@ -1,90 +1,57 @@
-/* Tablero de arriendos de Medellín.
+/* Mapa de arriendos de Medellín.
    Todo va dentro de un solo archivo HTML: los datos, el estilo y este guion. Lo
    único que sale a la red son las teselas del mapa base, y si no cargan la
-   página sigue siendo legible, porque los hexágonos dibujan la ciudad por sí
-   solos. Ninguna fuente exige clave de API. */
+   página sigue siendo legible, porque los puntos de las manzanas dibujan la
+   ciudad por sí solos. Ninguna fuente exige clave de API.
+
+   La página es solo el mapa, a la manera del de consumo de EPM: puntos exactos,
+   un panel corto para leerlo y nada de cifras de informe. La estadística vive
+   en la consulta, enlazada desde el panel. */
 
 (() => {
   "use strict";
 
-  const { rejilla, resumen, modelo, barrios, ipc, turismo, amoblados } = DATOS;
-  const celdas = rejilla.celdas;
+  const { puntos } = DATOS;
+  const resumen = puntos.resumen;
+  const AV = puntos.avisos;
+  const MZ = puntos.manzanas;
+  const NA = AV.lat.length;
+  const NM = MZ.lat.length;
+  const RADIO = resumen.radio_m;
 
   // ── formato ────────────────────────────────────────────────
-  const miles = (v) => (v == null ? "–" : d3.format(",.0f")(v).replace(/,/g, "."));
+  const miles = (v) => (v == null ? "–" : Math.round(v).toLocaleString("es-CO"));
   const pesos = (v) => (v == null ? "–" : "$" + miles(v));
+  const milPesos = (v) => "$" + miles(v / 1000) + " mil";
   const pct = (v, d = 1) => (v == null ? "–" : v.toFixed(d).replace(".", ",") + " %");
-  const pctSig = (v, d = 1) =>
+  const pctSig = (v, d = 0) =>
     v == null ? "–" : (v > 0 ? "+" : "−") + Math.abs(v).toFixed(d).replace(".", ",") + " %";
+  const leerVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const $ = (id) => document.getElementById(id);
 
-  const leerVar = (n) => getComputedStyle(document.body).getPropertyValue(n).trim();
+  document.getElementById("intro").innerHTML =
+    `Cada punto es uno de los <b>${miles(NA)} avisos de arriendo</b> publicados en ` +
+    `portales, en su ubicación exacta. Cambia la capa para ver el precio, dónde la ` +
+    `ubicación encarece o en qué barrios no se anuncia nada. Pasa el cursor sobre un punto para ver sus datos.`;
 
-  // ── indicadores de portada ─────────────────────────────────
-  // Todas estas cifras salen del modelo recién estimado. Estuvieron escritas a
-  // mano hasta que una corrección de datos las dejó obsoletas en silencio.
-  const NOMBRE_PORTALES = { 1: "un portal", 2: "dos portales", 3: "tres portales", 4: "cuatro portales" };
-  const decimal = (v, d = 4) => v.toFixed(d).replace(".", ",");
-
-  const INDICADORES = [
-    {
-      cifra: miles(modelo.avisos_recogidos),
-      rotulo: "avisos recogidos",
-      nota: "de " + (NOMBRE_PORTALES[modelo.portales_recogidos] || modelo.portales_recogidos + " portales"),
-    },
-    { cifra: pesos(modelo.precio_m2_mediano), rotulo: "precio mediano por m²", nota: "en arriendo" },
-    {
-      cifra: pct(modelo.r2_ajustado * 100),
-      rotulo: "de la varianza explicada",
-      nota: `modelo hedónico sobre ${miles(modelo.avisos_modelo)} avisos`,
-    },
-    {
-      cifra: `${Math.round(modelo.banda_ubicacion_pp)} pp`,
-      rotulo: "cuesta la ubicación",
-      nota: `de ${modelo.barrio_mas_caro.barrio} a ${modelo.barrio_mas_barato.barrio}`,
-    },
-    {
-      cifra: "+" + decimal(modelo.moran_i),
-      rotulo: "índice de Moran",
-      nota: "el precio depende del de los vecinos",
-    },
-  ];
-
-  d3.select("#indicadores")
-    .selectAll("div")
-    .data(INDICADORES)
-    .join("div")
-    .attr("class", "ind vidrio")
-    .html(
-      (d) =>
-        `<span class="cifra">${d.cifra}</span>
-         <div class="rotulo">${d.rotulo}</div>
-         <div class="nota">${d.nota}</div>`
-    );
-
-  if (resumen.pct_viviendas_sin_datos != null) {
-    document.getElementById("hallazgo-cifra").textContent =
-      pct(resumen.pct_viviendas_sin_datos);
-    document.getElementById("h-total").textContent = miles(resumen.celdas_totales);
-    document.getElementById("h-sin").textContent = miles(resumen.celdas_sin_avisos);
-    document.getElementById("h-viv").textContent = miles(resumen.viviendas_sin_ningun_aviso);
-  }
-
-  // ── definición de capas ────────────────────────────────────
+  // ── capas ──────────────────────────────────────────────────
+  // Rampas validadas del proyecto. Cálido es caro, frío es barato, en todas las
+  // capas y también en la consulta, para que el color diga lo mismo en todo el sitio.
   const RAMPA = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"];
   const RAMPA_CALIDA = ["#f5efe0", "#f0d494", "#e5a75c", "#d4762f", "#a8401c", "#6d1f10"];
   const LISA = {
-    "alto-alto": "#184f95",
-    "bajo-bajo": "#d03b3b",
-    "alto-bajo": "#86b6ef",
-    "bajo-alto": "#ec835a",
-    "no significativo": "#d9d3c8",
+    "alto-alto": "#d03b3b",
+    "alto-bajo": "#ec835a",
+    "bajo-alto": "#86b6ef",
+    "bajo-bajo": "#184f95",
+    "no significativo": "#cfc6b6",
   };
   const ETIQUETA_LISA = {
-    "alto-alto": "Caro entre caros",
-    "bajo-bajo": "Barato entre baratos",
-    "alto-bajo": "Caro entre baratos",
-    "bajo-alto": "Barato entre caros",
-    "no significativo": "Sin patrón local",
+    "alto-alto": "Caro rodeado de caros",
+    "alto-bajo": "Caro rodeado de baratos",
+    "bajo-alto": "Barato rodeado de caros",
+    "bajo-bajo": "Barato rodeado de baratos",
+    "no significativo": "Sin patrón",
   };
 
   function cuantiles(valores, n) {
@@ -92,632 +59,322 @@
     return d3.range(n + 1).map((i) => d3.quantile(s, i / n));
   }
 
+  /* Cada capa dice de qué puntos sale (avisos o manzanas), cómo se pinta cada
+     uno y cómo se explica en el panel. `tenue` marca los puntos sin valor en
+     esa capa: se dibujan pequeños y claros, sin competir con los que tienen dato. */
   const CAPAS = {
     precio: {
-      titulo: "El precio del metro cuadrado",
-      sub: "Mediana del precio pedido en celdas hexagonales de 174 m de arista",
-      campo: "precio_m2",
+      fuente: "avisos",
       construir() {
-        const cortes = cuantiles(celdas.map((c) => c.p.precio_m2), 7);
+        const cortes = cuantiles(AV.precio_m2, 7);
         const escala = d3.scaleThreshold().domain(cortes.slice(1, -1)).range(RAMPA);
         return {
-          color: (p) => (p.precio_m2 == null ? leerVar("--sin-datos") : escala(p.precio_m2)),
-          leyenda: RAMPA.map((c, i) => ({
-            color: c,
-            texto: `${pesos(cortes[i])} a ${pesos(cortes[i + 1])}`,
-          })).concat([{ color: leerVar("--sin-datos"), texto: "Sin avisos" }]),
-          titulo: "pesos por m²",
-        };
-      },
-    },
-
-    cobertura: {
-      titulo: "Dónde llega el mercado formal",
-      sub: "Avisos publicados por cada mil viviendas censadas. Es la capa del hallazgo",
-      campo: "cobertura",
-      construir() {
-        const cortes = [0, 5, 15, 35, 70, 150];
-        const escala = d3.scaleThreshold().domain(cortes.slice(1)).range(RAMPA_CALIDA);
-        return {
-          color: (p) =>
-            !p.avisos ? leerVar("--sin-datos") : escala(p.cobertura ?? 0),
-          leyenda: [{ color: leerVar("--sin-datos"), texto: "Ningún aviso publicado" }].concat(
-            RAMPA_CALIDA.map((c, i) => ({
-              color: c,
-              texto:
-                i === RAMPA_CALIDA.length - 1
-                  ? `más de ${cortes[i]}`
-                  : `${cortes[i]} a ${cortes[i + 1]}`,
-            }))
-          ),
-          titulo: "avisos por mil viviendas",
+          color: (i) => escala(AV.precio_m2[i]),
+          tenue: () => false,
+          titulo: "Precio pedido por metro cuadrado",
+          rampa: RAMPA,
+          pies: [`menos de ${milPesos(cortes[1])}`, `más de ${milPesos(cortes[cortes.length - 2])}`],
+          nota: "Azul claro: los avisos más baratos por metro cuadrado. Azul oscuro: los más caros.",
         };
       },
     },
 
     sobreprecio: {
-      titulo: "Cuánto cuesta la ubicación",
-      sub: "Lo que el precio supera a lo que predicen los atributos del inmueble",
-      campo: "sobreprecio",
+      fuente: "avisos",
       construir() {
-        const vals = celdas.map((c) => c.p.sobreprecio).filter((v) => v != null);
+        const vals = AV.sobreprecio.filter((v) => v != null);
         const tope = d3.quantile(vals.map(Math.abs).sort(d3.ascending), 0.95) || 30;
         const escala = d3
           .scaleLinear()
           .domain([-tope, 0, tope])
-          .range([leerVar("--polo-bajo"), leerVar("--arena-2"), leerVar("--polo-alto")])
+          .range([leerVar("--barato"), leerVar("--neutro"), leerVar("--caro")])
           .clamp(true);
         return {
-          color: (p) => (p.sobreprecio == null ? leerVar("--sin-datos") : escala(p.sobreprecio)),
-          leyenda: [
-            { color: leerVar("--polo-alto"), texto: `hasta +${Math.round(tope)} %` },
-            { color: leerVar("--arena-2"), texto: "en línea con sus atributos" },
-            { color: leerVar("--polo-bajo"), texto: `hasta −${Math.round(tope)} %` },
-            { color: leerVar("--sin-datos"), texto: "Sin dato" },
-          ],
-          titulo: "sobreprecio de la celda",
+          color: (i) => (AV.sobreprecio[i] == null ? leerVar("--sin-datos") : escala(AV.sobreprecio[i])),
+          tenue: (i) => AV.sobreprecio[i] == null,
+          titulo: "Lo que la ubicación le suma al precio",
+          rampa: d3.range(7).map((k) => escala(-tope + (2 * tope * k) / 6)),
+          pies: [`${pctSig(-tope)}`, "en línea", `${pctSig(tope)}`],
+          extra: [{ color: leerVar("--sin-datos"), texto: "Aviso de hace más de 90 días" }],
+          nota: "Rojo: el aviso pide más de lo que su tamaño, estrato y demás características explican; esa diferencia la pone el lugar. Azul: pide menos.",
         };
       },
     },
 
     conglomerado: {
-      titulo: "El precio está agrupado, no disperso",
-      sub: "Conglomerados locales, significativos al 5 % por permutaciones",
-      campo: "conglomerado",
+      fuente: "avisos",
       construir: () => ({
-        color: (p) => LISA[p.conglomerado] || leerVar("--sin-datos"),
-        leyenda: Object.entries(ETIQUETA_LISA)
-          .map(([k, v]) => ({ color: LISA[k], texto: v }))
-          .concat([{ color: leerVar("--sin-datos"), texto: "Sin avisos" }]),
-        titulo: "tipo de conglomerado",
+        color: (i) =>
+          AV.conglomerado[i] == null ? leerVar("--sin-datos") : LISA[puntos.conglomerados[AV.conglomerado[i]]],
+        tenue: (i) => AV.conglomerado[i] == null,
+        titulo: "Dónde se agrupan los precios",
+        lista: Object.keys(ETIQUETA_LISA).map((k) => ({ color: LISA[k], texto: ETIQUETA_LISA[k] })),
+        extra: [{ color: leerVar("--sin-datos"), texto: "Aviso de hace más de 90 días" }],
+        nota: "Los arriendos caros tienden a estar junto a otros caros, y los baratos junto a baratos.",
       }),
     },
 
-    viviendas: {
-      titulo: "La ciudad que hay debajo",
-      sub: "Viviendas censadas por el DANE en cada celda, tenga avisos o no",
-      campo: "viviendas",
+    cobertura: {
+      fuente: "manzanas",
       construir() {
-        const cortes = cuantiles(celdas.map((c) => c.p.viviendas), 6);
+        const cortes = [0, 5, 15, 35, 70, 150];
+        const escala = d3.scaleThreshold().domain(cortes.slice(1)).range(RAMPA_CALIDA);
+        return {
+          color: (i) => (!MZ.avisos_cerca[i] ? leerVar("--sin-datos") : escala(MZ.cobertura[i] ?? 0)),
+          tenue: (i) => !MZ.viviendas[i],
+          titulo: "Arriendos publicados cerca de cada manzana",
+          rampa: RAMPA_CALIDA,
+          pies: ["pocos", "muchos"],
+          extra: [{ color: leerVar("--sin-datos"), texto: `Ningún aviso a menos de ${RADIO} m` }],
+          nota: `Cada punto es una manzana del censo. En las grises vive el ${pct(
+            resumen.pct_viviendas_sin_datos
+          )} de las viviendas de la ciudad: ahí el arriendo no se anuncia en portales.`,
+        };
+      },
+    },
+
+    viviendas: {
+      fuente: "manzanas",
+      construir() {
+        const cortes = cuantiles(MZ.viviendas.filter((v) => v > 0), 6);
         const escala = d3.scaleThreshold().domain(cortes.slice(1, -1)).range(RAMPA_CALIDA);
         return {
-          color: (p) => (p.viviendas ? escala(p.viviendas) : leerVar("--sin-datos")),
-          // La celda sin viviendas censadas se pinta con el gris de "sin dato" y
-          // por tanto tiene que aparecer en la leyenda: si no, el mapa muestra
-          // un color que la leyenda no explica.
-          leyenda: RAMPA_CALIDA.map((c, i) => ({
-            color: c,
-            texto: `${miles(cortes[i])} a ${miles(cortes[i + 1])}`,
-          })).concat([{ color: leerVar("--sin-datos"), texto: "Sin viviendas censadas" }]),
-          titulo: "viviendas censadas",
+          color: (i) => (MZ.viviendas[i] ? escala(MZ.viviendas[i]) : leerVar("--sin-datos")),
+          tenue: (i) => !MZ.viviendas[i],
+          titulo: "Viviendas censadas por manzana",
+          rampa: RAMPA_CALIDA,
+          pies: [`menos de ${miles(cortes[1])}`, `más de ${miles(cortes[cortes.length - 2])}`],
+          nota: "La ciudad que hay debajo de los avisos: cada manzana del censo del DANE, tenga arriendos publicados o no.",
         };
       },
     },
   };
 
   // ── mapa ───────────────────────────────────────────────────
-  /* El mapa va sobre teselas reales, y esa es la diferencia con la versión
-     anterior. Los hexágonos por sí solos dibujaban la silueta de la ciudad,
-     pero no decían dónde estaba uno: sin calles ni nombres, una celda cara al
-     sur podía ser El Poblado, Envigado o Sabaneta, y el lector no tenía cómo
-     saberlo. Las teselas de CARTO, levantadas sobre OpenStreetMap, ponen ese
-     contexto.
-
-     Van en tres pisos y el orden importa:
-
-       1. el terreno SIN rótulos, abajo;
-       2. los hexágonos en medio, translúcidos;
-       3. los rótulos otra vez ENCIMA.
-
-     Si los rótulos fueran parte del fondo, el color del dato los taparía justo
-     donde el dato es más intenso, que es donde más falta hace leer el nombre
-     de la calle. Separándolos, la nomenclatura sobrevive al color. */
-
-  /* Sobre la eleccion de proveedor, que costo un intento fallido.
-     Las teselas de CARTO parecian la opcion evidente por estetica, y contestaban
-     con codigo 200. Pero la imagen que devuelven lleva estampado 'API KEY
-     REQUIRED': el servidor responde bien y entrega una tesela inservible. Un
-     200 no dice que el contenido sirva, y comprobarlo solo con el codigo de
-     respuesta dejo el mapa con marca de agua sin que ninguna prueba fallara.
-     Se verificaron mirando los pixeles.
-
-     Quedan dos que funcionan sin clave y traen nomenclatura completa: el mapa
-     estandar de OpenStreetMap para el tema claro, y el lienzo oscuro de Esri
-     para el tema oscuro, porque OpenStreetMap no publica version oscura. */
-  const TESELAS = {
-    claro: {
-      url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-      credito: '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      maxZoom: 19,
-    },
-    oscuro: {
-      url:
-        "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/" +
-        "World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
-      credito: "Esri · HERE · Garmin · OpenStreetMap",
-      maxZoom: 16,
-    },
-  };
+  // El fondo satelital y la capa de puntos salen de mapa_satelite.js, común a
+  // todo el sitio. Ahí está también por qué el mapa es MapLibre y no Leaflet.
 
   const esOscuro = () =>
     document.documentElement.dataset.tema === "oscuro" ||
-    (!document.documentElement.dataset.tema &&
-      matchMedia("(prefers-color-scheme: dark)").matches);
+    (!document.documentElement.dataset.tema && matchMedia("(prefers-color-scheme: dark)").matches);
 
-  // Capa activa y función de color en curso. La construye `pintar()` a partir
-  // de la definición de la capa, y `estilo()` la consulta en cada repintado.
-  let capaActual = "precio";
-  let pintor = null;
+  /* El encuadre se calcula sobre donde vive la gente, pesando cada manzana por
+     sus viviendas censadas. Encuadrar por los avisos metería por la puerta de
+     atrás el sesgo que el mapa denuncia, porque los avisos se amontonan en el sur. */
+  function limitesUtiles(recorte = 0.015) {
+    const total = d3.sum(MZ.viviendas) || 1;
+    const cuantil = (eje, p) => {
+      const orden = d3.range(NM).sort((a, b) => MZ[eje][a] - MZ[eje][b]);
+      let acumulado = 0;
+      for (const i of orden) {
+        acumulado += MZ.viviendas[i] || 0;
+        if (acumulado / total >= p) return MZ[eje][i];
+      }
+      return MZ[eje][orden[orden.length - 1]];
+    };
+    return [
+      [cuantil("lng", recorte), cuantil("lat", recorte)],
+      [cuantil("lng", 1 - recorte), cuantil("lat", 1 - recorte)],
+    ];
+  }
+  const LIMITES = limitesUtiles();
 
-  /* Las celdas se pasan tal cual vienen del GeoJSON.
-     Aquí hubo que invertir el anillo mientras el mapa lo dibujaba d3-geo, que
-     trabaja sobre la esfera y usa el convenio contrario al de la norma RFC 7946.
-     Leaflet proyecta en el plano y no atiende al sentido de giro, así que esa
-     inversión sobra: dejarla puesta no rompía nada, pero escondía de dónde
-     venía el problema. */
-  const coleccion = {
-    type: "FeatureCollection",
-    features: celdas.map((c) => ({
-      type: "Feature",
-      properties: c.p,
-      geometry: { type: "Polygon", coordinates: [c.g] },
-    })),
+  // El panel tapa la franja izquierda; el encuadre la descuenta para que la
+  // ciudad quede centrada en lo que sí se ve.
+  function margenes() {
+    const panel = document.querySelector(".panel").getBoundingClientRect();
+    return window.innerWidth <= 720
+      ? { top: 70, left: 12, right: 12, bottom: panel.height + 12 }
+      : { top: 24, left: panel.right + 250, right: 80, bottom: 24 };
+  }
+
+  const mapa = MapaSatelite.crear("mapa", { bounds: LIMITES, fitBoundsOptions: { padding: margenes() }, minZoom: 9 });
+  const encuadrar = () => mapa.fitBounds(LIMITES, { padding: margenes(), duration: 600 });
+
+  // ── buscar un barrio ───────────────────────────────────────
+  // El centro de cada barrio es la mediana de sus avisos. La búsqueda no exige
+  // tildes ni mayúsculas: "belen" encuentra Belen y "aguacatala" La Aguacatala.
+  const normalizar = (t) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  const CENTROS = (() => {
+    const grupos = new Map();
+    AV.barrio.forEach((b, i) => {
+      if (!b) return;
+      if (!grupos.has(b)) grupos.set(b, { lat: [], lng: [] });
+      grupos.get(b).lat.push(AV.lat[i]);
+      grupos.get(b).lng.push(AV.lng[i]);
+    });
+    return [...grupos].map(([nombre, g]) => ({ nombre, n: g.lat.length, lat: d3.median(g.lat), lng: d3.median(g.lng) }))
+      .sort((a, b) => b.n - a.n);
+  })();
+  $("lista-barrios").innerHTML = CENTROS.map((c) => `<option value="${c.nombre}">`).join("");
+  $("buscar-barrio").addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    const q = normalizar($("barrio-buscado").value);
+    const hallado = q && (CENTROS.find((c) => normalizar(c.nombre) === q) || CENTROS.find((c) => normalizar(c.nombre).includes(q)));
+    const nota = $("barrio-nota");
+    if (!hallado) {
+      nota.hidden = false;
+      nota.textContent = "No hay avisos en un barrio con ese nombre.";
+      return;
+    }
+    nota.hidden = false;
+    nota.textContent = `${hallado.nombre}: ${miles(hallado.n)} avisos.`;
+    $("barrio-buscado").value = hallado.nombre;
+    mapa.flyTo({ center: [hallado.lng, hallado.lat], zoom: 15, padding: margenes(), speed: 1.4 });
+  });
+
+  $("mas").addEventListener("click", () => mapa.zoomIn());
+  $("menos").addEventListener("click", () => mapa.zoomOut());
+  $("todo").addEventListener("click", encuadrar);
+  new ResizeObserver(() => mapa.resize()).observe($("mapa"));
+
+  // ── puntos ─────────────────────────────────────────────────
+  const separados = MapaSatelite.separar(AV.lat, AV.lng);
+  const pilaAviso = separados.pila;
+  const COORDENADAS = {
+    avisos: { lat: separados.lat, lng: separados.lng },
+    manzanas: { lat: MZ.lat, lng: MZ.lng },
   };
 
-  /* El encuadre se calcula sobre donde vive la gente, no sobre los extremos
-     del municipio ni sobre donde hay avisos.
+  let capaActual = "precio";
+  let pintor = null;
+  let fijado = null; // { fuente, i }
+  const marcas = {};
+  let listo = false; // la capa de puntos existe desde el evento load
+  let opacidad = 0.8;
 
-     Medellín incluye corregimientos rurales que se extienden mucho más allá del
-     valle: ajustar a la extensión total dejaba el hexágono en cinco píxeles y la
-     ciudad ilegible. Encuadrar por los avisos habría corregido eso, pero metería
-     por la puerta de atrás justo el sesgo que esta página denuncia, porque los
-     avisos se amontonan en el sur. Se pesa por viviendas censadas: entra el 97 %
-     del parque, comunas populares incluidas, y quedan fuera los corregimientos.
+  // ── globo ──────────────────────────────────────────────────
+  const globo = $("globo");
 
-     Las celdas de afuera se siguen dibujando; aparecen al alejar el zoom. */
-  function limitesUtiles(recorte = 0.015) {
-    const centros = celdas.map((c) => ({
-      lon: d3.mean(c.g, (p) => p[0]),
-      lat: d3.mean(c.g, (p) => p[1]),
-      // El +1 evita que una celda con avisos y sin censo pese cero y desaparezca
-      // del encuadre por completo.
-      peso: (c.p.viviendas || 0) + 1,
-    }));
-    const total = d3.sum(centros, (c) => c.peso);
-
-    // Cuantil ponderado: se ordena por la coordenada y se avanza acumulando
-    // peso hasta cruzar la proporción buscada.
-    const cuantil = (eje, p) => {
-      const orden = centros.slice().sort((a, b) => a[eje] - b[eje]);
-      let acumulado = 0;
-      for (const c of orden) {
-        acumulado += c.peso;
-        if (acumulado / total >= p) return c[eje];
-      }
-      return orden[orden.length - 1][eje];
-    };
-
-    return L.latLngBounds(
-      [cuantil("lat", recorte), cuantil("lon", recorte)],
-      [cuantil("lat", 1 - recorte), cuantil("lon", 1 - recorte)]
-    );
+  function contenido(fuente, i, fija) {
+    const filas = [];
+    const f = (rot, val) => filas.push(`<dt>${rot}</dt><dd>${val}</dd>`);
+    const marca = fija ? '<span class="fija">fijado</span>' : "";
+    if (fuente === "avisos") {
+      const cong = AV.conglomerado[i];
+      f("Arriendo", pesos(AV.precio[i]));
+      f("Por m²", pesos(AV.precio_m2[i]));
+      f("Área", `${miles(AV.area[i])} m²`);
+      if (AV.estrato[i] != null) f("Estrato", AV.estrato[i]);
+      if (AV.sobreprecio[i] != null) f("Por la ubicación", pctSig(AV.sobreprecio[i]));
+      if (AV.amoblado[i]) f("Amoblado", "sí");
+      const pila = pilaAviso[i] > 1
+        ? `<div class="aviso">Ubicación aproximada: ${miles(pilaAviso[i])} avisos comparten este punto.</div>` : "";
+      return `<div class="tit">${AV.barrio[i] || "Aviso"}${marca}</div>` +
+        (cong != null ? `<div class="sub">${ETIQUETA_LISA[puntos.conglomerados[cong]]}</div>` : "") +
+        `<dl>${filas.join("")}</dl>${pila}`;
+    }
+    f("Viviendas", miles(MZ.viviendas[i]));
+    f(`Avisos a ${RADIO} m`, miles(MZ.avisos_cerca[i]));
+    const vacia = !MZ.avisos_cerca[i] && MZ.viviendas_cerca[i]
+      ? `<div class="aviso">A su alrededor hay ${miles(MZ.viviendas_cerca[i])} viviendas y ningún arriendo publicado.</div>` : "";
+    return `<div class="tit">Manzana del censo${marca}</div>` +
+      (MZ.estrato[i] != null ? `<div class="sub">estrato ${MZ.estrato[i]}</div>` : "") +
+      `<dl>${filas.join("")}</dl>${vacia}`;
   }
 
-  const mapa = L.map("mapa", {
-    // La rueda no debe secuestrar el desplazamiento de la página: se habilita
-    // solo cuando el lector hace clic dentro del mapa, y se suelta al salir.
-    scrollWheelZoom: false,
-    zoomSnap: 0.25,
-    minZoom: 10,
-    maxZoom: 17,
-    renderer: L.svg({ padding: 0.3 }),
-  });
-  mapa.attributionControl.setPrefix("");
-  mapa.fitBounds(limitesUtiles(), { padding: [6, 6] });
-
-  let capaFondo = null;
-  let avisadoSinRed = false;
-
-  function ponerTeselas() {
-    const t = TESELAS[esOscuro() ? "oscuro" : "claro"];
-    if (capaFondo) mapa.removeLayer(capaFondo);
-
-    capaFondo = L.tileLayer(t.url, {
-      attribution: t.credito,
-      maxZoom: t.maxZoom,
-      // Por encima del zoom que sirve el proveedor, Leaflet estira la última
-      // tesela disponible en vez de dejar el fondo en blanco.
-      maxNativeZoom: t.maxZoom,
-    }).addTo(mapa);
-
-    /* Las teselas vienen de la red, y son lo único de esta página que la
-       necesita. Sin conexión el mapa sigue siendo legible, porque los hexágonos
-       dibujan la silueta, pero conviene decir por qué no hay calles en vez de
-       dejar al lector pensando que algo se rompió. */
-    capaFondo.on("tileerror", () => {
-      if (avisadoSinRed) return;
-      avisadoSinRed = true;
-      document.getElementById("pista-mapa").textContent =
-        "Sin conexión: el mapa base no cargó. Los hexágonos siguen dibujando la ciudad.";
-    });
+  function mostrarGlobo(fuente, i, fija = false) {
+    globo.innerHTML = contenido(fuente, i, fija);
+    const c = COORDENADAS[fuente];
+    const p = mapa.project([c.lng[i], c.lat[i]]);
+    const caja = $("mapa").getBoundingClientRect();
+    const w = globo.offsetWidth, h = globo.offsetHeight;
+    let x = p.x + 14, y = p.y + 14;
+    if (x + w > caja.width - 8) x = p.x - w - 14;
+    if (y + h > caja.height - 8) y = p.y - h - 14;
+    globo.style.left = x + "px";
+    globo.style.top = y + "px";
+    globo.classList.add("visible");
   }
-  ponerTeselas();
-
-  // ── celdas ─────────────────────────────────────────────────
-  let opacidad = 0.68;
-  let fijada = null;
-  let clicEnCelda = false;
-
-  function estilo(rasgo) {
-    const p = rasgo.properties;
-    const vacia = !p.avisos;
-    return {
-      fillColor: pintor ? pintor.color(p) : leerVar("--sin-datos"),
-      /* Las celdas sin un solo aviso se dejan más transparentes a propósito.
-         Debajo se ven las calles y las manzanas, así que se lee que ahí hay un
-         barrio real del que no tenemos ni un dato, y no un hueco del mapa. */
-      fillOpacity: vacia ? opacidad * 0.5 : opacidad,
-      color: leerVar("--trazo-celda"),
-      weight: 0.4,
-      opacity: 0.5,
-    };
-  }
-
-  function resaltar(capa) {
-    capa.setStyle({ weight: 2.2, color: leerVar("--tinta"), opacity: 1 });
-    capa.bringToFront();
-  }
-
-  const capaCeldas = L.geoJSON(coleccion, {
-    style: estilo,
-    smoothFactor: 0.3,
-    onEachFeature: (rasgo, capa) => {
-      capa.on({
-        mouseover: () => {
-          if (fijada) return;
-          resaltar(capa);
-          mostrarDetalle(rasgo.properties);
-        },
-        mouseout: () => {
-          if (!fijada) capaCeldas.resetStyle(capa);
-        },
-        click: () => {
-          clicEnCelda = true;
-          if (fijada === capa) {
-            soltar();
-            return;
-          }
-          if (fijada) capaCeldas.resetStyle(fijada);
-          fijada = capa;
-          resaltar(capa);
-          mostrarDetalle(rasgo.properties, true);
-        },
-      });
-    },
-  }).addTo(mapa);
+  const ocultarGlobo = () => globo.classList.remove("visible");
 
   function soltar() {
-    if (fijada) capaCeldas.resetStyle(fijada);
-    fijada = null;
-    detalleInicial();
+    if (fijado) marcas[fijado.fuente].marcar(null);
+    fijado = null;
+    ocultarGlobo();
   }
 
-  /* El clic de la celda sube hasta el mapa. En vez de cortar la propagación,
-     que en Leaflet obliga a manejar el evento original, se marca la bandera:
-     la celda avisa de que ya atendió el clic y el mapa no deshace la fijación. */
-  mapa.on("click", () => {
-    mapa.scrollWheelZoom.enable();
-    if (!clicEnCelda) soltar();
-    clicEnCelda = false;
-  });
-  mapa.getContainer().addEventListener("mouseleave", () => {
-    mapa.scrollWheelZoom.disable();
-  });
+  // ── pintar ─────────────────────────────────────────────────
+  function leyenda() {
+    const l = pintor;
+    $("leyenda-titulo").textContent = l.titulo;
+    let html = "";
+    if (l.rampa) {
+      html += `<div class="rampa">${l.rampa.map((c) => `<div style="background:${c}"></div>`).join("")}</div>` +
+        `<div class="rampa-pies">${l.pies.map((p) => `<span>${p}</span>`).join("")}</div>`;
+    }
+    if (l.lista) {
+      html += `<ul class="lista">${l.lista.map((e) => `<li><span class="punto" style="background:${e.color}"></span>${e.texto}</li>`).join("")}</ul>`;
+    }
+    if (l.extra) {
+      html += `<ul class="lista extra">${l.extra.map((e) => `<li><span class="punto" style="background:${e.color}"></span>${e.texto}</li>`).join("")}</ul>`;
+    }
+    $("leyenda").innerHTML = html;
+    $("leyenda-nota").textContent = l.nota;
+  }
 
   function pintar() {
     const capa = CAPAS[capaActual];
     pintor = capa.construir();
-    capaCeldas.setStyle(estilo);
-    if (fijada) resaltar(fijada);
-
-    document.getElementById("mapa-titulo").textContent = capa.titulo;
-    document.getElementById("mapa-sub").textContent = capa.sub;
-
-    d3.select("#leyenda").html(
-      `<div class="titulo">${pintor.titulo}</div><ul>` +
-        pintor.leyenda
-          .map(
-            (l) =>
-              `<li><span class="muestra" style="background:${l.color}"></span>${l.texto}</li>`
-          )
-          .join("") +
-        "</ul>"
-    );
-  }
-
-  function detalleInicial() {
-    document.getElementById("detalle").innerHTML =
-      '<div class="titulo">Señala una celda</div>' +
-      '<div class="vacio">Cada hexágono cubre unos 174 m de lado. Al pasar el cursor' +
-      " se muestran sus cifras, y al hacer clic quedan fijas.</div>";
-  }
-
-  function mostrarDetalle(p, fija = false) {
-    const filas = [];
-    const f = (rot, val) => filas.push(`<dt>${rot}</dt><dd>${val}</dd>`);
-
-    if (p.avisos) {
-      f("Avisos", miles(p.avisos));
-      f("Precio mediano", pesos(p.precio_mediano));
-      f("Por m²", pesos(p.precio_m2));
-      if (p.area_mediana) f("Área mediana", `${Math.round(p.area_mediana)} m²`);
-      if (p.sobreprecio != null) f("Sobreprecio", pctSig(p.sobreprecio));
-      if (p.pct_amoblado != null) f("Amoblados", pct(p.pct_amoblado, 0));
+    if (fijado && fijado.fuente !== capa.fuente) soltar();
+    const c = COORDENADAS[capa.fuente];
+    mapa.getSource(capa.fuente).setData(MapaSatelite.rasgos(c.lat, c.lng, pintor.color, pintor.tenue));
+    for (const fuente of ["avisos", "manzanas"]) {
+      mapa.setLayoutProperty(fuente, "visibility", fuente === capa.fuente ? "visible" : "none");
     }
-    f("Viviendas censadas", miles(p.viviendas));
-    if (p.avisos) f("Avisos por mil", (p.cobertura ?? 0).toFixed(1).replace(".", ","));
-    if (p.estrato_censo) f("Estrato del censo", p.estrato_censo);
-
-    /* El título solo lleva barrio cuando de verdad lo hay. Antes se colaba aquí
-       'Arriendo En', que no era un barrio sino el resto de una URL sin barrio
-       mal troceada. Esas celdas se rotulan ahora por lo que son. */
-    const titulo = p.barrio || (p.avisos ? "Celda con avisos" : "Zona sin avisos");
-    const marca = fija ? '<span class="chincheta">fijada</span>' : "";
-    const aviso = p.avisos
-      ? ""
-      : `<div class="vacio" style="margin-top:10px">Aquí viven ${miles(
-          p.viviendas
-        )} hogares y no se publicó ningún arriendo.</div>`;
-
-    document.getElementById("detalle").innerHTML =
-      `<div class="titulo">${titulo}${marca}</div>` +
-      `<div class="tenue">${
-        p.conglomerado ? ETIQUETA_LISA[p.conglomerado] : "celda de 174 m"
-      }</div>` +
-      `<dl>${filas.join("")}</dl>${aviso}`;
+    if (fijado) mostrarGlobo(fijado.fuente, fijado.i, true);
+    leyenda();
   }
 
-  document.querySelectorAll(".capa").forEach((b) =>
+  mapa.on("load", () => {
+    MapaSatelite.capaPuntos(mapa, "manzanas", { radio: 2.2 });
+    MapaSatelite.capaPuntos(mapa, "avisos", { radio: 2.5 });
+    for (const fuente of ["avisos", "manzanas"]) {
+      marcas[fuente] = MapaSatelite.alPasar(mapa, fuente, {
+        entra: (i) => { if (!fijado) mostrarGlobo(fuente, i); },
+        sale: () => { if (!fijado) ocultarGlobo(); },
+      });
+      mapa.on("click", fuente, (e) => {
+        e.originalEvent.clicEnPunto = true;
+        const i = e.features[0].id;
+        if (fijado && fijado.fuente === fuente && fijado.i === i) return soltar();
+        fijado = { fuente, i };
+        marcas[fuente].marcar(i);
+        mostrarGlobo(fuente, i, true);
+      });
+    }
+    // Clic fuera de los puntos: suelta el que estaba fijo.
+    mapa.on("click", (e) => { if (!e.originalEvent.clicEnPunto) soltar(); });
+    mapa.on("move", () => { if (fijado) mostrarGlobo(fijado.fuente, fijado.i, true); else ocultarGlobo(); });
+    listo = true;
+    aplicarOpacidad();
+    pintar();
+  });
+
+  // Opacidad: deja ver la calle o el satélite debajo de una zona muy cargada.
+  function aplicarOpacidad() {
+    for (const fuente of ["avisos", "manzanas"]) MapaSatelite.opacidad(mapa, fuente, opacidad);
+  }
+  $("opacidad").addEventListener("input", (e) => {
+    opacidad = e.target.value / 100;
+    $("opacidad-valor").textContent = `${e.target.value} %`;
+    if (listo) aplicarOpacidad();
+  });
+
+  document.querySelectorAll(".capas button").forEach((b) =>
     b.addEventListener("click", () => {
-      document.querySelectorAll(".capa").forEach((o) => o.setAttribute("aria-pressed", "false"));
+      document.querySelectorAll(".capas button").forEach((o) => o.setAttribute("aria-pressed", "false"));
       b.setAttribute("aria-pressed", "true");
       capaActual = b.dataset.capa;
-      pintar();
+      if (listo) pintar();
     })
   );
 
-  // Deslizador de opacidad: sirve para contrastar contra la calle lo que dice
-  // el dato, que es justo la pregunta que uno se hace al ver una celda cara.
-  const deslizador = document.getElementById("opacidad");
-  deslizador.addEventListener("input", () => {
-    opacidad = +deslizador.value / 100;
-    capaCeldas.setStyle(estilo);
-    if (fijada) resaltar(fijada);
-  });
-
-  // ── gráficas de las secciones ──────────────────────────────
-
-  function tarjeta(id, titulo, apunte, cuerpo) {
-    document.getElementById(id).innerHTML =
-      `<div class="tarjeta vidrio"><h2>${titulo}</h2><p class="apunte">${apunte}</p>${cuerpo}</div>`;
-  }
-
-  function lineas(datos, series, opciones = {}) {
-    const an = 640,
-      al = 260,
-      m = { t: 14, d: 78, b: 34, i: 52 };
-    const x = d3
-      .scalePoint()
-      .domain(datos.map(opciones.x))
-      .range([m.i, an - m.d]);
-    const todos = series.flatMap((s) => datos.map(s.y).filter((v) => v != null));
-    const y = d3
-      .scaleLinear()
-      .domain([d3.min(todos) * 0.94, d3.max(todos) * 1.04])
-      .range([al - m.b, m.t]);
-
-    const eje = (v) =>
-      `<line x1="${m.i}" x2="${an - m.d}" y1="${y(v)}" y2="${y(v)}" stroke="${leerVar(
-        "--arena-3"
-      )}" stroke-width="1"/>
-       <text x="${m.i - 8}" y="${y(v) + 4}" text-anchor="end" font-size="10.5" fill="${leerVar(
-        "--tinta-3"
-      )}">${opciones.formatoY ? opciones.formatoY(v) : v}</text>`;
-
-    const lineaG = d3
-      .line()
-      .defined((d, i, a) => a[i] != null)
-      .x((d) => x(opciones.x(d)))
-      .curve(d3.curveMonotoneX);
-
-    const trazos = series
-      .map((s) => {
-        const g = lineaG.y((d) => y(s.y(d)))(datos.filter((d) => s.y(d) != null));
-        const ult = datos[datos.length - 1];
-        return `<path d="${g}" fill="none" stroke="${s.color}" stroke-width="2.4" stroke-linecap="round"/>
-                <circle cx="${x(opciones.x(ult))}" cy="${y(s.y(ult))}" r="4" fill="${s.color}"/>
-                <text x="${x(opciones.x(ult)) + 9}" y="${y(s.y(ult)) + 4}" font-size="11.5"
-                      font-weight="600" fill="${leerVar("--tinta")}">${s.nombre}</text>`;
-      })
-      .join("");
-
-    const marcas = y.ticks(4).map(eje).join("");
-    const etiquetasX = datos
-      .filter((d, i) => i % Math.ceil(datos.length / 6) === 0)
-      .map(
-        (d) =>
-          `<text x="${x(opciones.x(d))}" y="${al - 10}" text-anchor="middle" font-size="10.5"
-                 fill="${leerVar("--tinta-3")}">${opciones.etiquetaX(d)}</text>`
-      )
-      .join("");
-
-    return `<svg viewBox="0 0 ${an} ${al}" style="width:100%;height:auto;margin-top:10px">${marcas}${trazos}${etiquetasX}</svg>`;
-  }
-
-  function barras(datos, opciones) {
-    const an = 640,
-      alFila = 21,
-      m = { i: 150, d: 60, t: 6 };
-    const al = datos.length * alFila + 24;
-    const max = d3.max(datos, (d) => Math.abs(opciones.v(d)));
-    const x = d3.scaleLinear().domain([-max, max]).range([m.i, an - m.d]);
-    const cero = x(0);
-
-    return (
-      `<svg viewBox="0 0 ${an} ${al}" style="width:100%;height:auto;margin-top:10px">` +
-      `<line x1="${cero}" x2="${cero}" y1="0" y2="${al - 16}" stroke="${leerVar(
-        "--tinta-3"
-      )}" stroke-width="1"/>` +
-      datos
-        .map((d, i) => {
-          const v = opciones.v(d);
-          const y = i * alFila + m.t;
-          const ancho = Math.abs(x(v) - cero);
-          const ix = v >= 0 ? cero : cero - ancho;
-          const color = v >= 0 ? leerVar("--polo-alto") : leerVar("--polo-bajo");
-          return `<rect x="${ix}" y="${y}" width="${ancho}" height="${alFila - 7}" rx="3" fill="${color}"/>
-            <text x="${m.i - 10}" y="${y + 11}" text-anchor="end" font-size="11"
-                  fill="${leerVar("--tinta-2")}">${opciones.n(d)}</text>
-            <text x="${v >= 0 ? x(v) + 7 : x(v) - 7}" y="${y + 11}"
-                  text-anchor="${v >= 0 ? "start" : "end"}" font-size="10.5" font-weight="600"
-                  fill="${leerVar("--tinta")}">${pctSig(v)}</text>`;
-        })
-        .join("") +
-      "</svg>"
-    );
-  }
-
-  function construirSecciones() {
-    // 1. El alza
-    if (ipc.length) {
-      const ult = ipc[ipc.length - 1];
-      tarjeta(
-        "seccion-alza",
-        "Cuánto subió, y dónde se separa Medellín",
-        "Un raspado da una fotografía de hoy. La magnitud del alza viene del índice de precios del DANE. El arriendo nacional viene desacelerando; Medellín hace lo contrario.",
-        lineas(
-          ipc,
-          [
-            {
-              nombre: "Medellín",
-              y: (d) => d.alojamiento_medellin_anual,
-              color: leerVar("--serie-1"),
-            },
-            {
-              nombre: "Nacional",
-              y: (d) => d.alojamiento_nacional_anual,
-              color: leerVar("--serie-2"),
-            },
-          ],
-          {
-            x: (d) => d.periodo,
-            etiquetaX: (d) => String(d.periodo).slice(0, 7),
-            formatoY: (v) => v.toFixed(0) + " %",
-          }
-        ) +
-          `<p class="tenue" style="margin-top:6px">Variación anual del IPC, división de alojamiento.
-           La brecha con el país pasó de −0,09 a +2,02 puntos porcentuales.</p>`
-      );
-    }
-
-    // 2. Sobreprecio por barrio
-    if (barrios.length) {
-      const orden = barrios.slice().sort((a, b) => b.sobreprecio_pct - a.sobreprecio_pct);
-      const sel = orden.slice(0, 9).concat(orden.slice(-9));
-      tarjeta(
-        "seccion-ubicacion",
-        "Cuánto vale la ubicación",
-        `Sobreprecio de cada barrio sobre lo que predicen área, alcobas, baños, estrato y
-         amenidades. El modelo se estima sin efectos de barrio, porque con ellos dentro el
-         residual valdría cero por construcción. La banda va de
-         ${pctSig(modelo.barrio_mas_caro.sobreprecio)} en ${modelo.barrio_mas_caro.barrio} a
-         ${pctSig(modelo.barrio_mas_barato.sobreprecio)} en ${modelo.barrio_mas_barato.barrio}.`,
-        barras(sel, { n: (d) => d.barrio, v: (d) => d.sobreprecio_pct })
-      );
-    }
-
-    // 3. Renta corta
-    if (turismo.length) {
-      const med = turismo.filter((d) => d.ciudad === "Medellin");
-      const bog = turismo.filter((d) => d.ciudad === "Bogota");
-      const porAnio = med.map((d) => ({
-        anio: d.anio,
-        med: d.viviendas_turisticas,
-        bog: (bog.find((b) => b.anio === d.anio) || {}).viviendas_turisticas,
-      }));
-      tarjeta(
-        "seccion-turismo",
-        "La presión de la renta corta",
-        "InsideAirbnb ya no cubre Medellín. La alternativa es el Registro Nacional de Turismo, obligatorio para toda vivienda que se alquile a turistas.",
-        lineas(
-          porAnio,
-          [
-            { nombre: "Medellín", y: (d) => d.med, color: leerVar("--serie-1") },
-            { nombre: "Bogotá", y: (d) => d.bog, color: leerVar("--serie-2") },
-          ],
-          { x: (d) => d.anio, etiquetaX: (d) => d.anio, formatoY: miles }
-        ) +
-          `<p class="tenue" style="margin-top:6px">Las viviendas turísticas registradas en Medellín
-           pasaron de 521 en 2019 a 8.766 en 2024: se multiplicaron por 16,8 y hoy equivalen al
-           0,94 % del parque de vivienda. Los barrios con más oferta amoblada muestran mayor
-           sobreprecio de ubicación, con una correlación de rangos de
-           +${decimal(modelo.correlacion_amoblado, 3)} sobre ${miles(barrios.length)} barrios.
-           Es asociación, no causa.</p>`
-      );
-    }
-
-    // 4. Qué encarece
-    // Solo los efectos significativos al 5 %: dibujar una barra para un
-    // coeficiente que no se distingue de cero invita a leerla como si dijera
-    // algo, y no lo dice.
-    const EFECTOS = (modelo.efectos || [])
-      .filter((e) => e.significativo)
-      .map((e) => ({ n: e.nombre.replace("bano", "baño").replace("Porteria", "Portería")
-                       .replace("antiguedad", "antigüedad"), v: e.efecto }));
-    const elasticidad = modelo.elasticidad_area || 0;
-    const noSignificativos = (modelo.efectos || []).filter((e) => !e.significativo).length;
-
-    tarjeta(
-      "seccion-modelo",
-      "Qué encarece un arriendo",
-      `Efecto de cada atributo sobre el precio, con todo lo demás constante. El área
-       entra en logaritmo y no aparece aquí: su coeficiente es una elasticidad de
-       ${decimal(elasticidad, 3)}, es decir que un inmueble 10 % más grande cuesta
-       ${decimal(elasticidad * 10, 1)} % más.`,
-      barras(EFECTOS, { n: (d) => d.n, v: (d) => d.v }) +
-        `<p class="tenue" style="margin-top:6px">Se muestran los ${EFECTOS.length} atributos
-         significativos al 5 %. Otros ${noSignificativos} —piscina, ascensor, zonas verdes y
-         el número de alcobas una vez fijada el área— no se distinguen de cero.</p>`
-    );
-  }
-
   // ── tema ───────────────────────────────────────────────────
-  const btnTema = document.getElementById("tema");
-  btnTema.addEventListener("click", () => {
+  $("tema").addEventListener("click", () => {
     document.documentElement.dataset.tema = esOscuro() ? "claro" : "oscuro";
-    // Las gráficas leen los colores del tema al construirse, de modo que hay
-    // que rehacerlas; no basta con repintar el mapa. Las teselas también
-    // cambian de juego, porque el mapa base tiene su propia versión oscura.
-    ponerTeselas();
-    pintar();
-    construirSecciones();
+    // Algunos colores de las capas salen de las variables del tema, así que se
+    // repinta todo. El fondo satelital es el mismo en los dos modos.
+    if (listo) pintar();
   });
-
-  // ── aparición al desplazar ─────────────────────────────────
-  const observador = new IntersectionObserver(
-    (entradas) =>
-      entradas.forEach((e) => e.isIntersecting && e.target.classList.add("visible")),
-    { threshold: 0.06 }
-  );
-  document.querySelectorAll(".aparece").forEach((e) => observador.observe(e));
-
-  // ── arranque ───────────────────────────────────────────────
-  detalleInicial();
-  pintar();
-  construirSecciones();
-
-  // Leaflet mide el contenedor al crearse. Si la ventana cambia de tamaño hay
-  // que decírselo, o el mapa se queda con las medidas viejas y las teselas
-  // aparecen recortadas.
-  addEventListener("resize", () => mapa.invalidateSize());
 })();

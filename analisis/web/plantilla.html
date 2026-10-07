@@ -1,451 +1,283 @@
+<!doctype html>
+<html lang="es">
+<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Arriendos en Medellín</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>
-__ESTILO_LEAFLET__
+__ESTILO_MAPLIBRE__
 </style>
 
 <style>
-/* ─────────────────────────────────────────────────────────────
-   Modern Organic Glass
-   Superficie cálida y orgánica, paneles de cristal esmerilado.
-   El color del dato es la paleta validada del proyecto: el estilo
-   viste el continente, nunca el contenido.
-   ───────────────────────────────────────────────────────────── */
+/* El mapa ocupa toda la pantalla y lo demás flota encima en vidrio, como en el
+   mapa de consumo de EPM: un panel a la izquierda con lo justo para leerlo,
+   las capas al lado y el zoom abajo a la derecha. Nada de cifras de informe. */
 
 :root {
   color-scheme: light;
-
-  --arena-0:   #fbf8f3;
-  --arena-1:   #f4efe6;
-  --arena-2:   #eae2d5;
-  --arena-3:   #ddd2c0;
-
-  --tinta:     #262320;
-  --tinta-2:   #5f584e;
-  --tinta-3:   #928a7d;
-
-  --terracota: #b0603a;
-  --musgo:     #6c7f5f;
-  --arcilla:   #c98c5e;
-
-  --vidrio:        rgba(255, 255, 255, 0.52);
-  --vidrio-fuerte: rgba(255, 255, 255, 0.72);
-  --vidrio-borde:  rgba(255, 255, 255, 0.80);
-  --vidrio-sombra: 0 10px 40px rgba(94, 82, 66, 0.10), 0 2px 8px rgba(94, 82, 66, 0.05);
-
-  --mancha-1: #cbd8c3;
-  --mancha-2: #f0d9c2;
-  --mancha-3: #d9cfe2;
-
-  --serie-1: #2a78d6;
-  --serie-2: #eb6834;
-  --polo-alto: #2a78d6;
-  --polo-bajo: #d03b3b;
-  --sin-datos: #c3b9a8;
-  /* Filo de cada hexagono sobre el mapa base: casi blanco en claro, casi negro
-     en oscuro. Tiene que separar celda de celda sin llegar a tapar la calle. */
-  --trazo-celda: rgba(255, 255, 255, 0.75);
-
-  --radio:    22px;
-  --radio-sm: 14px;
-  --suave:    cubic-bezier(.22,.61,.36,1);
+  --fondo:   #f4efe6;
+  --papel:   #eae2d5;
+  --tarjeta: #ffffff;
+  --tinta:   #262320;
+  --tinta-2: #5f584e;
+  --tinta-3: #928a7d;
+  --linea:   #e2d9ca;
+  --linea-2: #cbbfac;
+  --acento:  #b0603a;
+  --acento-tenue: rgba(176, 96, 58, .12);
+  --acento-borde: rgba(176, 96, 58, .34);
+  --caro:    #d03b3b;
+  --barato:  #2a78d6;
+  --neutro:  #eae2d5;
+  --sin-datos: #b9ae9b;
+  --vidrio: rgba(255, 255, 255, .7);
+  --vidrio-borde: rgba(255, 255, 255, .55);
+  --vidrio-sombra: 0 12px 38px -14px rgba(60, 45, 30, .35), 0 2px 10px -4px rgba(60, 45, 30, .18);
+  --alto-sitio: 52px;
 }
-
 :root:not([data-tema="claro"]) {
   @media (prefers-color-scheme: dark) {
     color-scheme: dark;
-    --arena-0: #131210;
-    --arena-1: #1b1917;
-    --arena-2: #23201c;
-    --arena-3: #2f2b25;
+    --fondo:   #131210;
+    --papel:   #1b1917;
+    --tarjeta: #1f1c19;
     --tinta:   #f2ede4;
     --tinta-2: #b8b0a3;
     --tinta-3: #857d70;
-    --terracota: #d98a5f;
-    --musgo:   #9bb18a;
-    --vidrio:        rgba(46, 43, 38, 0.55);
-    --vidrio-fuerte: rgba(52, 48, 42, 0.75);
-    --vidrio-borde:  rgba(255, 255, 255, 0.10);
-    --vidrio-sombra: 0 10px 40px rgba(0, 0, 0, 0.32);
-    --mancha-1: #35402f;
-    --mancha-2: #47372a;
-    --mancha-3: #363048;
-    --serie-1: #3987e5;
-    --serie-2: #d95926;
-    --polo-alto: #3987e5;
-    --polo-bajo: #e66767;
+    --linea:   #2a2622;
+    --linea-2: #3a342d;
+    --acento:  #d98a5f;
+    --acento-tenue: rgba(217, 138, 95, .16);
+    --acento-borde: rgba(217, 138, 95, .38);
+    --caro:    #e05252;
+    --barato:  #3987e5;
+    --neutro:  #3a342d;
     --sin-datos: #5b5346;
-    --trazo-celda: rgba(0, 0, 0, 0.55);
+    --vidrio: rgba(27, 25, 23, .72);
+    --vidrio-borde: rgba(255, 255, 255, .08);
+    --vidrio-sombra: 0 16px 44px -14px rgba(0, 0, 0, .65), 0 2px 10px -4px rgba(0, 0, 0, .5);
   }
 }
-
 :root[data-tema="oscuro"] {
   color-scheme: dark;
-  --arena-0: #131210;
-  --arena-1: #1b1917;
-  --arena-2: #23201c;
-  --arena-3: #2f2b25;
+  --fondo:   #131210;
+  --papel:   #1b1917;
+  --tarjeta: #1f1c19;
   --tinta:   #f2ede4;
   --tinta-2: #b8b0a3;
   --tinta-3: #857d70;
-  --terracota: #d98a5f;
-  --musgo:   #9bb18a;
-  --vidrio:        rgba(46, 43, 38, 0.55);
-  --vidrio-fuerte: rgba(52, 48, 42, 0.75);
-  --vidrio-borde:  rgba(255, 255, 255, 0.10);
-  --vidrio-sombra: 0 10px 40px rgba(0, 0, 0, 0.32);
-  --mancha-1: #35402f;
-  --mancha-2: #47372a;
-  --mancha-3: #363048;
-  --serie-1: #3987e5;
-  --serie-2: #d95926;
-  --polo-alto: #3987e5;
-  --polo-bajo: #e66767;
+  --linea:   #2a2622;
+  --linea-2: #3a342d;
+  --acento:  #d98a5f;
+  --acento-tenue: rgba(217, 138, 95, .16);
+  --acento-borde: rgba(217, 138, 95, .38);
+  --caro:    #e05252;
+  --barato:  #3987e5;
+  --neutro:  #3a342d;
   --sin-datos: #5b5346;
-  --trazo-celda: rgba(0, 0, 0, 0.55);
+  --vidrio: rgba(27, 25, 23, .72);
+  --vidrio-borde: rgba(255, 255, 255, .08);
+  --vidrio-sombra: 0 16px 44px -14px rgba(0, 0, 0, .65), 0 2px 10px -4px rgba(0, 0, 0, .5);
 }
 
 * { box-sizing: border-box; }
-
+html, body { margin: 0; height: 100%; }
 body {
-  margin: 0;
-  background: var(--arena-1);
-  color: var(--tinta);
-  font: 400 16px/1.65 Inter, -apple-system, "Segoe UI", system-ui, sans-serif;
+  background: var(--fondo); color: var(--tinta); overflow: hidden;
+  font: 14px/1.55 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
 }
 
-/* ── Fondo orgánico ───────────────────────────────────────── */
-
-.fondo { position: fixed; inset: 0; z-index: -1; overflow: hidden; }
-.mancha {
-  position: absolute;
-  border-radius: 46% 54% 62% 38% / 52% 44% 56% 48%;
-  filter: blur(70px);
-  opacity: .55;
-  animation: deriva 34s var(--suave) infinite alternate;
-}
-.mancha.a { width: 46vw; height: 46vw; left: -10vw; top: -8vw;  background: var(--mancha-1); }
-.mancha.b { width: 40vw; height: 40vw; right: -8vw; top: 22vh;  background: var(--mancha-2); animation-delay: -12s; }
-.mancha.c { width: 36vw; height: 36vw; left: 24vw;  bottom: -12vw; background: var(--mancha-3); animation-delay: -22s; }
-
-@keyframes deriva {
-  from { transform: translate3d(0,0,0) scale(1)    rotate(0deg); }
-  to   { transform: translate3d(3vw,-3vh,0) scale(1.12) rotate(14deg); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .mancha { animation: none; }
-}
-
-/* ── Cristal ──────────────────────────────────────────────── */
+.app { position: relative; height: calc(100vh - var(--alto-sitio)); height: calc(100dvh - var(--alto-sitio)); overflow: hidden; }
+#mapa { position: absolute; inset: 0; background: var(--papel); }
+.maplibregl-map { font: inherit; }
+.maplibregl-ctrl-attrib { background: var(--vidrio) !important; color: var(--tinta-3) !important; border-radius: 8px 0 0 0 !important; }
+.maplibregl-ctrl-attrib a { color: var(--tinta-2) !important; }
+.maplibregl-ctrl-attrib-button { display: none; }
 
 .vidrio {
   background: var(--vidrio);
-  -webkit-backdrop-filter: blur(22px) saturate(180%);
-  backdrop-filter: blur(22px) saturate(180%);
-  border: 1px solid var(--vidrio-borde);
-  border-radius: var(--radio);
-  box-shadow: var(--vidrio-sombra);
+  backdrop-filter: saturate(180%) blur(22px); -webkit-backdrop-filter: saturate(180%) blur(22px);
+  border: 1px solid var(--vidrio-borde); box-shadow: var(--vidrio-sombra);
 }
 
-/* ── Estructura ───────────────────────────────────────────── */
-
-.envoltura { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
-
-header.hero { padding: 88px 0 42px; }
-.hero h1 {
-  font: 600 clamp(38px, 5.4vw, 66px)/1.06 Fraunces, Georgia, serif;
-  font-optical-sizing: auto;
-  letter-spacing: -0.022em;
-  margin: 0 0 18px;
-  max-width: 17ch;
+/* ── panel ─────────────────────────────────────────────────── */
+.panel {
+  position: absolute; z-index: 1000; top: 18px; left: 18px; bottom: 18px; width: 340px;
+  max-width: calc(100vw - 36px); border-radius: 24px; padding: 22px;
+  display: flex; flex-direction: column; gap: 22px; overflow-y: auto;
 }
-.hero .entrada {
-  font-size: 18px; line-height: 1.6; color: var(--tinta-2);
-  max-width: 62ch; margin: 0 0 34px;
+.panel-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.marca { display: flex; align-items: center; gap: 9px; font-size: 11px; letter-spacing: .13em;
+         text-transform: uppercase; color: var(--tinta-3); }
+.marca i { width: 22px; height: 3px; background: var(--acento); border-radius: 2px; }
+h1 { font: 600 25px/1.15 Fraunces, Georgia, serif; margin: 8px 0 0; letter-spacing: -.01em; }
+.intro { margin: 12px 0 0; color: var(--tinta-2); font-size: 13.5px; }
+.intro b { color: var(--tinta); font-weight: 600; }
+
+.rotulo { font-size: 10.5px; letter-spacing: .11em; text-transform: uppercase; color: var(--tinta-3);
+          margin: 0 0 9px; font-weight: 600; }
+.rampa { display: flex; gap: 3px; }
+.rampa div { flex: 1; height: 12px; border-radius: 5px; }
+.rampa-pies { display: flex; justify-content: space-between; color: var(--tinta-3); font-size: 11px; margin-top: 5px; }
+.lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.lista li { display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--tinta-2); }
+.punto { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+.extra { margin-top: 10px; }
+.nota { color: var(--tinta-3); font-size: 12px; margin: 10px 0 0; }
+
+.acciones { display: flex; flex-direction: column; gap: 9px; }
+.acciones a {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; text-decoration: none;
+  padding: 13px 16px; border-radius: 14px; font-size: 14px; font-weight: 600;
+  background: var(--tarjeta); color: var(--tinta); border: 1px solid var(--linea-2);
 }
-.etiqueta {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-size: 12.5px; font-weight: 500; letter-spacing: .07em;
-  text-transform: uppercase; color: var(--tinta-2);
-  padding: 7px 15px; border-radius: 999px; margin-bottom: 24px;
+.acciones a.principal { background: var(--acento-tenue); color: var(--acento); border-color: var(--acento-borde); }
+.acciones a:hover { border-color: var(--acento); }
+.acciones a span { opacity: .7; }
+.buscar-barrio { display: flex; gap: 6px; }
+.buscar-barrio input { flex: 1; min-width: 0; font: inherit; font-size: 14px; padding: 12px 14px; border-radius: 14px;
+                       border: 1px solid var(--linea-2); background: var(--tarjeta); color: var(--tinta); }
+.buscar-barrio button { appearance: none; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+                        padding: 0 16px; border-radius: 14px; border: 1px solid var(--acento); background: var(--acento); color: #fff; }
+.buscar-barrio input:focus-visible, .buscar-barrio button:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+.fuente { color: var(--tinta-3); font-size: 11px; margin: auto 0 0; }
+.opacidad { display: flex; align-items: center; gap: 10px; margin-top: 16px; font-size: 12px; color: var(--tinta-2); }
+.opacidad input { flex: 1; min-width: 0; accent-color: var(--acento); }
+.opacidad span { width: 38px; text-align: right; font-variant-numeric: tabular-nums; color: var(--tinta-3); }
+
+.icono {
+  width: 34px; height: 34px; padding: 0; border-radius: 50%; flex-shrink: 0; cursor: pointer;
+  display: grid; place-items: center; background: var(--tarjeta); border: 1px solid var(--linea-2); color: var(--tinta-2);
 }
-.punto { width: 7px; height: 7px; border-radius: 50%; background: var(--terracota); }
+.icono svg { width: 17px; height: 17px; }
+.icono .sol { display: none; }
+:root[data-tema="oscuro"] .icono .luna { display: none; }
+:root[data-tema="oscuro"] .icono .sol { display: block; }
+:root:not([data-tema="claro"]) { @media (prefers-color-scheme: dark) {
+  .icono .luna { display: none; } .icono .sol { display: block; } } }
 
-section { margin: 0 0 30px; }
-h2 {
-  font: 600 clamp(25px, 3vw, 35px)/1.18 Fraunces, Georgia, serif;
-  letter-spacing: -0.018em; margin: 0 0 10px;
+/* ── capas: a la derecha del panel, que si no se las comería ── */
+.capas {
+  position: absolute; z-index: 999; left: 376px; top: 18px;
+  display: flex; flex-direction: column; gap: 8px; align-items: stretch; width: 210px;
 }
-h3 { font: 600 18px/1.35 Inter, sans-serif; margin: 0 0 8px; letter-spacing: -0.01em; }
-p  { margin: 0 0 14px; }
-.apunte { color: var(--tinta-2); font-size: 14.5px; }
-.tenue  { color: var(--tinta-3); font-size: 13px; }
-
-/* ── Indicadores ──────────────────────────────────────────── */
-
-.rejilla-ind {
-  display: grid; gap: 14px;
-  grid-template-columns: repeat(auto-fit, minmax(184px, 1fr));
+.capas button {
+  appearance: none; font: inherit; font-size: 12.5px; text-align: left; cursor: pointer;
+  padding: 10px 14px; border-radius: 12px; color: var(--tinta);
 }
-.ind { padding: 20px 22px; }
-.ind .cifra {
-  font: 600 clamp(26px, 3.1vw, 36px)/1 Fraunces, Georgia, serif;
-  letter-spacing: -0.02em; display: block; margin-bottom: 5px;
+.capas button:hover { border-color: var(--acento); }
+.capas button[aria-pressed="true"] { background: var(--acento); border-color: var(--acento); color: #fff; }
+.capas button:focus-visible, .zoom button:focus-visible, .icono:focus-visible, .acciones a:focus-visible {
+  outline: 2px solid var(--acento); outline-offset: 2px; }
+
+/* ── zoom ─────────────────────────────────────────────────── */
+.zoom { position: absolute; z-index: 999; right: 18px; bottom: 30px; display: flex; flex-direction: column;
+        gap: 8px; align-items: flex-end; }
+.zoom button {
+  appearance: none; font: inherit; cursor: pointer; color: var(--tinta);
+  width: 44px; height: 44px; border-radius: 50%; font-size: 18px; display: grid; place-items: center;
 }
-.ind .rotulo { font-size: 12.5px; color: var(--tinta-2); line-height: 1.4; }
-.ind .nota   { font-size: 11.5px; color: var(--tinta-3); margin-top: 6px; }
+.zoom button.todo { width: auto; height: auto; border-radius: 999px; padding: 10px 16px; font-size: 12px; }
 
-/* ── Mapa ─────────────────────────────────────────────────── */
-
-.mapa-marco { padding: 24px; }
-.mapa-cabecera {
-  display: flex; flex-wrap: wrap; gap: 16px;
-  align-items: flex-end; justify-content: space-between; margin-bottom: 18px;
+/* ── globo al pasar sobre un punto ─────────────────────────── */
+.globo {
+  position: absolute; z-index: 1001; pointer-events: none; border-radius: 14px; padding: 10px 12px;
+  font-size: 12px; max-width: 260px; opacity: 0; transition: opacity .08s;
 }
-.capas { display: flex; flex-wrap: wrap; gap: 7px; }
-.capa {
-  font: 500 13.5px Inter, sans-serif; color: var(--tinta-2);
-  background: transparent; border: 1px solid transparent;
-  padding: 8px 15px; border-radius: 999px; cursor: pointer;
-  transition: all .22s var(--suave);
+.globo.visible { opacity: 1; }
+.globo .tit { font-weight: 600; margin-bottom: 4px; }
+.globo .sub { color: var(--tinta-3); margin: -2px 0 6px; }
+.globo dl { margin: 0; display: grid; grid-template-columns: auto auto; gap: 2px 12px; }
+.globo dt { color: var(--tinta-2); }
+.globo dd { margin: 0; font-variant-numeric: tabular-nums; text-align: right; }
+.globo .aviso { margin-top: 7px; padding-top: 7px; border-top: 1px solid var(--linea); color: var(--tinta-2); }
+.globo .fija { font-size: 10.5px; color: var(--acento); margin-left: 6px; text-transform: uppercase; letter-spacing: .08em; }
+
+@media (max-width: 980px) {
+  .capas { left: auto; right: 18px; width: 190px; }
 }
-.capa:hover { color: var(--tinta); background: var(--vidrio-fuerte); }
-.capa[aria-pressed="true"] {
-  color: var(--tinta); background: var(--vidrio-fuerte);
-  border-color: var(--vidrio-borde); font-weight: 600;
+@media (max-width: 720px) {
+  .panel { top: auto; left: 0; right: 0; bottom: 0; width: auto; max-width: none; max-height: 46%;
+           border-radius: 22px 22px 0 0; gap: 16px; padding: 18px 18px max(18px, env(safe-area-inset-bottom)); }
+  .capas { left: 12px; right: 12px; top: 12px; width: auto; flex-direction: row; overflow-x: auto; }
+  .capas button { white-space: nowrap; flex-shrink: 0; }
+  .zoom { right: 12px; bottom: auto; top: 64px; }
+  .zoom button.todo { display: none; }
 }
-
-.mapa-cuerpo { display: grid; grid-template-columns: 1fr 290px; gap: 20px; align-items: start; }
-@media (max-width: 900px) { .mapa-cuerpo { grid-template-columns: 1fr; } }
-
-.lienzo {
-  position: relative; border-radius: var(--radio-sm); overflow: hidden;
-  background: var(--arena-1);
-  box-shadow: inset 0 0 0 1px var(--arena-3);
-}
-/* Leaflet mide el contenedor, así que necesita una altura declarada. El valle
-   es más alto que ancho, de modo que se le da altura generosa y se acota con
-   la altura de la ventana para que quepa junto a la ficha lateral. */
-#mapa { height: clamp(430px, 68vh, 780px); width: 100%; background: var(--arena-1); }
-#mapa path { transition: fill-opacity .3s var(--suave); cursor: pointer; }
-
-/* El mapa estándar de OpenStreetMap es muy saturado: los verdes de los parques
-   y los rojos de las vías compiten con la escala de color del dato, que es lo
-   que hay que leer. Se le baja la saturación lo justo para que ceda el
-   protagonismo sin que los rótulos pierdan nitidez, que es la razón de tener
-   mapa base. El lienzo oscuro de Esri ya viene apagado y no necesita filtro. */
-#mapa .leaflet-tile-pane { filter: saturate(.5) brightness(1.04); }
-:root[data-tema="oscuro"] #mapa .leaflet-tile-pane { filter: none; }
-:root:not([data-tema="claro"]) {
-  @media (prefers-color-scheme: dark) {
-    #mapa .leaflet-tile-pane { filter: none; }
-  }
-}
-
-/* Los controles de Leaflet, vestidos de cristal como el resto de la página. */
-#mapa .leaflet-control-zoom a {
-  background: var(--vidrio-fuerte); color: var(--tinta);
-  border: none; border-bottom: 1px solid var(--arena-3);
-  backdrop-filter: blur(14px); font-weight: 500;
-}
-#mapa .leaflet-control-zoom a:hover { background: var(--arena-0); color: var(--terracota); }
-#mapa .leaflet-control-zoom { border: 1px solid var(--vidrio-borde); border-radius: 10px; overflow: hidden; box-shadow: var(--vidrio-sombra); }
-#mapa .leaflet-control-attribution {
-  background: var(--vidrio); color: var(--tinta-3);
-  backdrop-filter: blur(10px); font: 400 10.5px Inter, sans-serif;
-  padding: 2px 8px; border-radius: 8px 0 0 0;
-}
-#mapa .leaflet-control-attribution a { color: var(--tinta-2); }
-
-.bajo-mapa {
-  display: flex; flex-wrap: wrap; gap: 14px; align-items: center;
-  justify-content: space-between; margin-top: 10px;
-}
-.pista { margin: 0; font-size: 12px; color: var(--tinta-3); }
-.mando {
-  display: flex; align-items: center; gap: 9px;
-  font-size: 12px; color: var(--tinta-3); white-space: nowrap;
-}
-.mando input[type="range"] { width: 130px; accent-color: var(--terracota); cursor: pointer; }
-
-.chincheta {
-  margin-left: 8px; padding: 1px 7px; border-radius: 999px;
-  font: 500 10.5px Inter, sans-serif; letter-spacing: .04em;
-  color: var(--terracota); background: var(--arena-2); vertical-align: middle;
-}
-
-.lateral { display: flex; flex-direction: column; gap: 14px; }
-.detalle { padding: 18px 20px; min-height: 190px; }
-.detalle .titulo { font: 600 16px Inter, sans-serif; margin-bottom: 3px; }
-.detalle dl { margin: 12px 0 0; display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; font-size: 13.5px; }
-.detalle dt { color: var(--tinta-2); }
-.detalle dd { margin: 0; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
-.detalle .vacio { color: var(--tinta-3); font-size: 13.5px; }
-
-.leyenda { padding: 16px 20px; }
-.leyenda .titulo { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); margin-bottom: 11px; }
-.leyenda ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.leyenda li { display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--tinta-2); }
-.muestra { width: 18px; height: 12px; border-radius: 3px; flex: none; }
-.muestra.circ { width: 11px; height: 11px; border-radius: 50%; }
-
-/* ── Hallazgo destacado ───────────────────────────────────── */
-
-.hallazgo { padding: 30px 34px; border-left: 3px solid var(--terracota); }
-.hallazgo .grande {
-  font: 600 clamp(30px, 4vw, 46px)/1.08 Fraunces, Georgia, serif;
-  letter-spacing: -0.02em; margin: 0 0 12px; color: var(--terracota);
-}
-
-/* ── Bloques de dos columnas ──────────────────────────────── */
-
-.dos { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
-.tarjeta { padding: 24px 26px; }
-.tarjeta img { width: 100%; height: auto; border-radius: var(--radio-sm); display: block; margin-top: 12px; }
-
-/* ── Tabla ────────────────────────────────────────────────── */
-
-.tabla-envoltura { overflow-x: auto; border-radius: var(--radio-sm); }
-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-th, td { padding: 9px 14px; text-align: left; }
-th { font-weight: 600; font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--tinta-2); }
-td { border-top: 1px solid var(--arena-3); font-variant-numeric: tabular-nums; }
-td.num, th.num { text-align: right; }
-tbody tr:hover { background: var(--vidrio-fuerte); }
-
-/* ── Barra flotante ───────────────────────────────────────── */
-
-.barra {
-  position: fixed; top: 18px; right: 18px; z-index: 40;
-  display: flex; gap: 6px; padding: 6px; border-radius: 999px;
-}
-.barra button {
-  border: none; background: transparent; cursor: pointer; color: var(--tinta-2);
-  width: 34px; height: 34px; border-radius: 50%; font-size: 15px;
-  display: grid; place-items: center; transition: all .2s var(--suave);
-}
-.barra button:hover { background: var(--vidrio-fuerte); color: var(--tinta); }
-
-footer { padding: 44px 0 66px; color: var(--tinta-3); font-size: 13px; }
-footer strong { color: var(--tinta-2); }
-
-.aparece { opacity: 0; transform: translateY(16px); transition: opacity .7s var(--suave), transform .7s var(--suave); }
-.aparece.visible { opacity: 1; transform: none; }
-@media (prefers-reduced-motion: reduce) { .aparece { opacity: 1; transform: none; } }
 </style>
+</head>
+<body>
+__ENCABEZADO__
 
-<div class="fondo" aria-hidden="true">
-  <div class="mancha a"></div><div class="mancha b"></div><div class="mancha c"></div>
-</div>
+<div class="app">
+  <div id="mapa" role="application" aria-label="Mapa de Medellín con un punto por aviso de arriendo o por manzana del censo"></div>
 
-<div class="barra vidrio">
-  <button id="tema" title="Cambiar entre claro y oscuro" aria-label="Cambiar tema">◐</button>
-</div>
-
-<div class="envoltura">
-
-  <header class="hero">
-    <span class="etiqueta vidrio"><span class="punto"></span>Análisis de datos · Medellín</span>
-    <h1>Por qué subió el precio de los arriendos</h1>
-    <p class="entrada">
-      17.345 avisos recogidos de cuatro portales inmobiliarios, cruzados con el
-      censo del DANE y con el índice de precios al consumidor. Lo que sigue
-      explica dónde está caro, cuánto de eso es la ubicación en sí misma, y una
-      cosa más incómoda: <strong>dónde el mercado formal simplemente no llega</strong>.
-    </p>
-    <div class="rejilla-ind" id="indicadores"></div>
-  </header>
-
-  <section class="aparece">
-    <div class="mapa-marco vidrio">
-      <div class="mapa-cabecera">
-        <div>
-          <h2 id="mapa-titulo">El precio del metro cuadrado</h2>
-          <p class="apunte" id="mapa-sub" style="margin:0">
-            Mediana del precio pedido en celdas hexagonales de 174 m de arista
-          </p>
-        </div>
-        <div class="capas" role="group" aria-label="Capas del mapa">
-          <button class="capa" data-capa="precio"   aria-pressed="true">Precio</button>
-          <button class="capa" data-capa="cobertura" aria-pressed="false">Cobertura</button>
-          <button class="capa" data-capa="sobreprecio" aria-pressed="false">Sobreprecio</button>
-          <button class="capa" data-capa="conglomerado" aria-pressed="false">Conglomerados</button>
-          <button class="capa" data-capa="viviendas" aria-pressed="false">Viviendas</button>
-        </div>
+  <aside class="panel vidrio">
+    <div>
+      <div class="panel-top">
+        <div class="marca"><i></i>Arriendos · Medellín</div>
+        <button id="tema" class="icono" type="button" aria-label="Cambiar entre claro y oscuro" title="Cambiar entre claro y oscuro">
+          <svg class="luna" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 14.6A9 9 0 1 1 9.4 3.2a7 7 0 0 0 11.4 11.4Z"/></svg>
+          <svg class="sol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"/></svg>
+        </button>
       </div>
-
-      <div class="mapa-cuerpo">
-        <div>
-          <div class="lienzo">
-            <div id="mapa" role="application" aria-label="Mapa de Medellín por celdas hexagonales sobre el callejero"></div>
-          </div>
-          <div class="bajo-mapa">
-            <p class="pista" id="pista-mapa">
-              Clic en una celda para fijar sus cifras. Clic en el mapa para acercar con la rueda.
-            </p>
-            <label class="mando">
-              Opacidad
-              <input type="range" id="opacidad" min="15" max="95" value="68"
-                     aria-label="Opacidad de los hexágonos sobre el mapa">
-            </label>
-          </div>
-        </div>
-        <aside class="lateral">
-          <div class="detalle vidrio" id="detalle"></div>
-          <div class="leyenda vidrio" id="leyenda"></div>
-        </aside>
-      </div>
+      <h1 id="titulo">El arriendo en Medellín, aviso por aviso</h1>
+      <p class="intro" id="intro"></p>
     </div>
-  </section>
 
-  <section class="aparece">
-    <div class="hallazgo vidrio">
-      <p class="grande" id="hallazgo-cifra">28,6 %</p>
-      <h3>del parque de vivienda de Medellín no tiene un solo aviso</h3>
-      <p class="apunte" style="max-width:70ch">
-        De las <strong id="h-total">1.521</strong> celdas que cubren la ciudad,
-        <strong id="h-sin">527</strong> no
-        registran ni un arriendo publicado. En ellas viven
-        <strong id="h-viv">251.782</strong> hogares censados. No es que falten datos
-        por recoger: es que <strong>el arriendo en las comunas populares no se
-        anuncia en portales inmobiliarios</strong>, se mueve por aviso en la ventana
-        y voz a voz.
-      </p>
-      <p class="apunte" style="max-width:70ch;margin:0">
-        La consecuencia para leer este trabajo es directa. Medido contra el censo,
-        el estrato 6 aparece <strong>trece veces más representado</strong> que el
-        estrato 1: 186,9 avisos por cada mil viviendas frente a 14,1. Todo lo que
-        sigue describe el mercado <em>formal e intermediado</em>, que es una parte
-        del mercado de arriendo, no su totalidad.
-      </p>
+    <div>
+      <p class="rotulo" id="leyenda-titulo"></p>
+      <div id="leyenda"></div>
+      <p class="nota" id="leyenda-nota"></p>
+      <label class="opacidad">Opacidad de los puntos
+        <input type="range" id="opacidad" min="10" max="100" step="5" value="80">
+        <span id="opacidad-valor">80 %</span>
+      </label>
     </div>
-  </section>
 
-  <section class="aparece" id="seccion-alza"></section>
-  <section class="aparece" id="seccion-modelo"></section>
-  <section class="aparece" id="seccion-ubicacion"></section>
-  <section class="aparece" id="seccion-turismo"></section>
+    <div class="acciones">
+      <a class="principal" href="consulta_arriendos.html#buscar">Buscar arriendo <span>→</span></a>
+      <form class="buscar-barrio" id="buscar-barrio" role="search" autocomplete="off">
+        <input id="barrio-buscado" list="lista-barrios" placeholder="Buscar un barrio en el mapa"
+               aria-label="Buscar un barrio en el mapa">
+        <button type="submit" aria-label="Ir al barrio">Ir</button>
+      </form>
+      <datalist id="lista-barrios"></datalist>
+      <p class="nota" id="barrio-nota" hidden></p>
+    </div>
 
-  <footer>
-    <p><strong>Lo que este trabajo no puede afirmar.</strong> Son precios pedidos,
-    no pactados. Es un corte transversal enriquecido con una serie oficial, no un
-    panel propio. Los avisos no son una muestra aleatoria del parque de vivienda.
-    Las relaciones halladas son asociaciones, no efectos causales.</p>
-    <p>Fuentes: portales inmobiliarios, Marco Geoestadístico Nacional y Índice de
-    Precios al Consumidor del DANE, y Registro Nacional de Turismo.</p>
-  </footer>
+    <p class="fuente">Avisos de portales inmobiliarios. Manzanas y viviendas: censo del DANE.
+      Son precios pedidos, no pactados.</p>
+  </aside>
+
+  <div class="capas" role="group" aria-label="Qué muestra el mapa">
+    <button class="vidrio" data-capa="precio" aria-pressed="true">Precio por m²</button>
+    <button class="vidrio" data-capa="sobreprecio" aria-pressed="false">Caro por la ubicación</button>
+    <button class="vidrio" data-capa="conglomerado" aria-pressed="false">Zonas caras y baratas</button>
+    <button class="vidrio" data-capa="cobertura" aria-pressed="false">Dónde no se anuncia</button>
+    <button class="vidrio" data-capa="viviendas" aria-pressed="false">Viviendas del censo</button>
+  </div>
+
+  <div class="zoom">
+    <button class="vidrio" id="mas" type="button" title="Acercar" aria-label="Acercar">+</button>
+    <button class="vidrio" id="menos" type="button" title="Alejar" aria-label="Alejar">−</button>
+    <button class="vidrio todo" id="todo" type="button">Toda la ciudad</button>
+  </div>
+
+  <div class="globo vidrio" id="globo" role="status"></div>
 </div>
 
 <script>
-__LEAFLET__
+__MAPLIBRE__
+</script>
+<script>
+__MAPA_SATELITE__
 </script>
 <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 <script>
@@ -454,3 +286,5 @@ const DATOS = __DATOS__;
 <script>
 __GUION__
 </script>
+</body>
+</html>

@@ -581,7 +581,11 @@ with tabs[7]:
             .rename(columns={"latitud": "lat", "longitud": "lon"})
         )
         if not mapa.empty:
-            st.map(mapa, size=14, color=P["terracota"])
+            from analisis.mapas import puntos_html
+
+            st.components.v1.html(
+                puntos_html(mapa["lat"], mapa["lon"], P["terracota"]), height=520, scrolling=False
+            )
     with der:
         por_barrio = (
             d[d["barrio"].notna()]

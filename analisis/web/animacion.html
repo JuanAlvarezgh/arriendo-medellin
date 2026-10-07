@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Animación: el arriendo en Medellín</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>__ESTILO_MAPLIBRE__</style>
+<style>
+  html, body { margin: 0; height: 100%; background: #0b1118; color: #fff; overflow: hidden;
+               font: 15px/1.5 Inter, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  /* Encima del horizonte el mapa queda transparente: el cielo es este degradado. */
+  #escena { position: absolute; inset: 0; background: linear-gradient(#0b1520 0%, #1d3448 38%, #5a7a8f 62%, #8fa5ae 100%); }
+  .maplibregl-ctrl-attrib { background: rgba(0,0,0,.45) !important; color: #cfd6db !important; }
+  .maplibregl-ctrl-attrib a { color: #e8edf0 !important; }
+  .maplibregl-ctrl-attrib-button { display: none; }
+
+  /* Rótulos de la animación: aparecen y se van solos según el tiempo. */
+  .rotulo { position: absolute; left: 6vw; right: 6vw; text-shadow: 0 2px 18px rgba(0,0,0,.55), 0 1px 3px rgba(0,0,0,.6);
+            opacity: 0; transform: translateY(10px); transition: none; pointer-events: none; }
+  .rotulo.titulo { top: 34%; text-align: center; }
+  .rotulo.titulo h1 { font: 600 clamp(36px, 6vw, 84px)/1.05 Fraunces, Georgia, serif; margin: 0; letter-spacing: -.01em; }
+  .rotulo.titulo p { font-size: clamp(16px, 1.8vw, 24px); margin: 14px 0 0; color: #e6ecef; }
+  .rotulo.lugar { top: 12%; font: 600 clamp(26px, 3.4vw, 46px)/1.1 Fraunces, Georgia, serif; }
+  .rotulo.lugar small { display: block; font: 500 clamp(14px, 1.4vw, 19px)/1.4 Inter, sans-serif; color: #dde5e9; margin-top: 8px; }
+  .rotulo.final { bottom: 16%; text-align: center; font: 600 clamp(24px, 3vw, 40px)/1.15 Fraunces, Georgia, serif; }
+  .rotulo.final small { display: block; font: 500 clamp(14px, 1.3vw, 18px)/1.4 Inter, sans-serif; color: #dde5e9; margin-top: 10px; }
+
+  /* Contador de la lluvia: cuántos avisos han caído y el precio por m² del último. */
+  .contador { position: absolute; left: 6vw; bottom: 9%; opacity: 0; pointer-events: none;
+              background: rgba(8, 14, 20, .58); border: 1px solid rgba(255,255,255,.12); border-radius: 18px;
+              padding: 16px 20px; min-width: 300px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .contador .n { font: 600 clamp(28px, 3vw, 44px)/1 Fraunces, Georgia, serif; font-variant-numeric: tabular-nums; }
+  .contador .que { color: #cfd8dd; font-size: 14px; margin-top: 4px; }
+  .contador .precio { font-size: 15px; margin-top: 10px; font-variant-numeric: tabular-nums; }
+  .contador .rampa { display: flex; gap: 3px; margin-top: 10px; position: relative; }
+  .contador .rampa div { flex: 1; height: 10px; border-radius: 4px; opacity: .25; transition: opacity .2s; }
+  .contador .rampa div.lleno { opacity: 1; }
+  .contador .pies { display: flex; justify-content: space-between; color: #b8c4ca; font-size: 12px; margin-top: 4px; }
+
+  /* Mandos: se esconden al grabar. */
+  .mandos { position: absolute; right: 18px; bottom: 34px; display: flex; gap: 8px; z-index: 5; }
+  .mandos button, .mandos a { appearance: none; font: inherit; font-size: 13px; cursor: pointer; text-decoration: none;
+             padding: 9px 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,.25);
+             background: rgba(8, 14, 20, .55); color: #fff; backdrop-filter: blur(8px); }
+  .mandos button:hover, .mandos a:hover { background: rgba(8, 14, 20, .8); }
+  .barra-tiempo { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255,255,255,.12); z-index: 5; }
+  .barra-tiempo i { display: block; height: 100%; width: 0; background: #e5a75c; }
+  body.grabando .mandos, body.grabando .barra-tiempo, body.grabando .sitio { display: none !important; }
+  body.grabando #escena { top: 0 !important; }
+  @media (max-width: 720px) { .contador { left: 12px; right: 12px; min-width: 0; } .mandos { bottom: 18px; right: 12px; } }
+</style>
+</head>
+<body>
+__ENCABEZADO__
+<div id="escena" role="img" aria-label="Animación: vuelo sobre el Valle de Aburrá y los avisos de arriendo cayendo sobre Medellín del más barato al más caro"></div>
+
+<div class="rotulo titulo" id="r-titulo"><h1>El arriendo en Medellín</h1><p id="r-titulo-sub"></p></div>
+<div class="rotulo lugar" id="r-valle">El Valle de Aburrá<small>Diez municipios entre montañas, a 1.500 metros de altura</small></div>
+<div class="rotulo lugar" id="r-medellin">Medellín<small id="r-medellin-sub"></small></div>
+<div class="rotulo lugar" id="r-lluvia">Del más barato al más caro<small>Cada punto es un aviso, ordenado por su precio por metro cuadrado</small></div>
+<div class="rotulo lugar" id="r-poblado">El Poblado<small id="r-poblado-sub"></small></div>
+<div class="rotulo final" id="r-final">Explora el mapa aviso por aviso<small>Precios pedidos en portales inmobiliarios · septiembre de 2026</small></div>
+
+<div class="contador" id="contador">
+  <div class="n" id="c-n">0</div>
+  <div class="que">avisos de arriendo</div>
+  <div class="precio" id="c-precio"></div>
+  <div class="rampa" id="c-rampa"></div>
+  <div class="pies"><span>más barato por m²</span><span>más caro</span></div>
+</div>
+
+<div class="mandos">
+  <button type="button" id="b-pausa">Pausa</button>
+  <button type="button" id="b-repetir">Repetir</button>
+  <a href="arriendos_medellin.html">Ir al mapa</a>
+</div>
+<div class="barra-tiempo"><i id="b-tiempo"></i></div>
+
+<script>__MAPLIBRE__</script>
+<script>__MAPA_SATELITE__</script>
+<script>const DATOS = __DATOS__;</script>
+<script>__GUION__</script>
+</body>
+</html>
